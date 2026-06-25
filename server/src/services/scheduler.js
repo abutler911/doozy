@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { Task } from "../models/Task.js";
 import { Settings } from "../models/Settings.js";
 import { sendSms } from "./textbelt.js";
+import { sendPushToAll } from "./webpush.js";
 import { todayStr, nowHHmm } from "./time.js";
 
 const PRIORITY_LABEL = { 1: "Low", 2: "Med", 3: "High", 4: "URGENT" };
@@ -18,8 +19,8 @@ function isDoneToday(task, today) {
 
 /** Send any per-task reminders whose time has arrived and not yet sent today. */
 async function runTaskReminders(today, hhmm) {
-  const phoneSettings = await Settings.getGlobal();
-  const phone = resolvePhone(phoneSettings);
+  const settings = await Settings.getGlobal();
+  const phone = resolvePhone(settings);
 
   const due = await Task.find({
     reminderEnabled: true,
@@ -36,8 +37,14 @@ async function runTaskReminders(today, hhmm) {
     }
     const tag = PRIORITY_LABEL[task.priority] || "";
     const msg = `Doozy reminder${tag ? ` [${tag}]` : ""}: ${task.title}`;
-    const result = await sendSms(phone, msg);
-    if (result.success) {
+
+    const sms = await sendSms(phone, msg);
+    let pushed = 0;
+    if (settings.pushEnabled) {
+      pushed = await sendPushToAll({ title: "Doozy reminder", body: task.title, url: "/" });
+    }
+    // Mark sent if any channel delivered, so we don't retry every minute.
+    if (sms.success || pushed > 0) {
       task.lastReminderSent = today;
       await task.save();
     }
@@ -75,8 +82,12 @@ async function runDailySummary(today, hhmm) {
     msg = `Doozy — today's ${open.length} task${open.length === 1 ? "" : "s"}:\n${lines}${extra}`;
   }
 
-  const result = await sendSms(phone, msg);
-  if (result.success) {
+  const sms = await sendSms(phone, msg);
+  let pushed = 0;
+  if (settings.pushEnabled) {
+    pushed = await sendPushToAll({ title: "Doozy — today", body: msg, url: "/" });
+  }
+  if (sms.success || pushed > 0) {
     settings.lastSummarySent = today;
     await settings.save();
   }

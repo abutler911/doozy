@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { Settings } from "../models/Settings.js";
 import { sendSms } from "../services/textbelt.js";
+import { isPushConfigured } from "../services/webpush.js";
 
 const router = Router();
 
@@ -11,7 +12,9 @@ router.get("/", async (_req, res) => {
     phone: settings.phone,
     dailySummaryEnabled: settings.dailySummaryEnabled,
     dailySummaryTime: settings.dailySummaryTime,
+    pushEnabled: settings.pushEnabled,
     smsConfigured: !!process.env.TEXTBELT_KEY,
+    pushConfigured: isPushConfigured(),
     envPhone: process.env.REMINDER_PHONE || "",
   });
 });
@@ -19,11 +22,12 @@ router.get("/", async (_req, res) => {
 // PUT /api/settings
 router.put("/", async (req, res) => {
   const settings = await Settings.getGlobal();
-  const { phone, dailySummaryEnabled, dailySummaryTime } = req.body;
+  const { phone, dailySummaryEnabled, dailySummaryTime, pushEnabled } = req.body;
   if (phone !== undefined) settings.phone = phone;
   if (dailySummaryEnabled !== undefined)
     settings.dailySummaryEnabled = !!dailySummaryEnabled;
   if (dailySummaryTime !== undefined) settings.dailySummaryTime = dailySummaryTime;
+  if (pushEnabled !== undefined) settings.pushEnabled = !!pushEnabled;
   await settings.save();
   res.json({ ok: true });
 });

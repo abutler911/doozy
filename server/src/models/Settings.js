@@ -17,6 +17,9 @@ const settingsSchema = new Schema(
     dailySummaryEnabled: { type: Boolean, default: false },
     dailySummaryTime: { type: String, default: "08:00" }, // "HH:mm"
     lastSummarySent: { type: String, default: null }, // "YYYY-MM-DD"
+
+    // Web push: when on, reminders & summary also fire as push notifications.
+    pushEnabled: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

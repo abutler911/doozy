@@ -72,6 +72,8 @@ Vite proxies `/api` to `localhost:4000`, so no extra config is needed in dev.
 | `REMINDER_PHONE`| Default phone reminders are sent to, e.g. `+15551234567`             |
 | `CLIENT_ORIGIN` | Allowed CORS origin(s), e.g. `https://doozy.andrewfbutler.com`       |
 | `TZ`            | Timezone for daily resets & reminders, e.g. `America/Denver`         |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Web Push keys (`npx web-push generate-vapid-keys`) |
+| `VAPID_SUBJECT` | Contact URI for push, e.g. `mailto:you@example.com`                  |
 
 ### Client (`client/.env` → set in Netlify)
 
@@ -111,6 +113,20 @@ Vite proxies `/api` to `localhost:4000`, so no extra config is needed in dev.
   custom API subdomain. Otherwise just point `VITE_API_URL` at the `.onrender.com` URL.
 
 ---
+
+## Push notifications
+
+Doozy can send **free web push** notifications in addition to SMS:
+
+1. Generate VAPID keys: `npx web-push generate-vapid-keys`, then set
+   `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` on the server.
+2. Open **Settings → Push notifications** and toggle *Send reminders as push on
+   this device*. Grant the browser permission, then hit **Send test push**.
+3. Reminders and the daily summary then fire as push to every subscribed device,
+   alongside SMS (SMS behavior is unchanged).
+
+> Push requires the app to be served over **HTTPS** (or `localhost`) and, on iOS,
+> the app must be **installed to the home screen** first.
 
 ## SMS notes
 

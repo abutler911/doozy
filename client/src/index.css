@@ -634,6 +634,21 @@ select {
   margin-bottom: 14px;
 }
 
+.push-field {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.btn-sm {
+  align-self: flex-start;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.warn-text {
+  color: var(--p-high);
+}
+
 .sms-status .ok {
   color: var(--accent-2);
 }

@@ -50,4 +50,9 @@ export const api = {
   getSettings: () => request("GET", "/settings"),
   updateSettings: (s) => request("PUT", "/settings", s),
   testSms: () => request("POST", "/settings/test-sms"),
+
+  pushPublicKey: () => request("GET", "/push/public-key"),
+  pushSubscribe: (sub) => request("POST", "/push/subscribe", sub),
+  pushUnsubscribe: (endpoint) => request("POST", "/push/unsubscribe", { endpoint }),
+  testPush: () => request("POST", "/push/test"),
 };

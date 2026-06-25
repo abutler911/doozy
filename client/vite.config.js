@@ -6,7 +6,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.js",
       registerType: "autoUpdate",
+      injectRegister: "auto",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
         name: "Doozy",
@@ -29,26 +33,15 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
-        // Cache the app shell for offline launch. API calls are
-        // network-first so data stays fresh when online.
+      // We ship a custom service worker (src/sw.js) so we can handle push
+      // events; injectManifest just injects the precache list into it.
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
-        navigateFallback: "/index.html",
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith("/api"),
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "doozy-api",
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
-            },
-          },
-        ],
       },
       devOptions: {
-        // Lets you test the PWA in `npm run dev`.
+        // Lets you test the PWA (and push) in `npm run dev`.
         enabled: true,
+        type: "module",
       },
     }),
   ],

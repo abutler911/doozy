@@ -5,8 +5,10 @@ import cors from "cors";
 import { connectDB } from "./db.js";
 import { requireAuth } from "./middleware/auth.js";
 import { startScheduler } from "./services/scheduler.js";
+import { initWebPush } from "./services/webpush.js";
 import tasksRouter from "./routes/tasks.js";
 import settingsRouter from "./routes/settings.js";
+import pushRouter from "./routes/push.js";
 
 const app = express();
 app.use(express.json());
@@ -39,6 +41,7 @@ app.post("/api/login", (req, res) => {
 // Everything below requires auth.
 app.use("/api/tasks", requireAuth, tasksRouter);
 app.use("/api/settings", requireAuth, settingsRouter);
+app.use("/api/push", requireAuth, pushRouter);
 
 // Centralized error handler.
 app.use((err, _req, res, _next) => {
@@ -50,6 +53,7 @@ const PORT = process.env.PORT || 4000;
 
 async function main() {
   await connectDB(process.env.MONGODB_URI);
+  initWebPush();
   startScheduler();
   app.listen(PORT, () => console.log(`[server] listening on :${PORT}`));
 }
