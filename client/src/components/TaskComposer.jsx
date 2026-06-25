@@ -5,6 +5,7 @@ const empty = {
   title: "",
   type: "oneoff",
   priority: 2,
+  dueDate: "",
   reminderEnabled: false,
   reminderTime: "09:00",
 };
@@ -22,6 +23,7 @@ export default function TaskComposer({ onCreate }) {
     if (!form.title.trim()) return;
     await onCreate({
       ...form,
+      dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
       reminderTime: form.reminderEnabled ? form.reminderTime : null,
     });
     setForm(empty);
@@ -73,6 +75,16 @@ export default function TaskComposer({ onCreate }) {
               </option>
             ))}
           </select>
+
+          {form.type === "oneoff" && (
+            <input
+              type="date"
+              className="time-input"
+              value={form.dueDate}
+              onChange={(e) => set("dueDate", e.target.value)}
+              aria-label="Due date"
+            />
+          )}
 
           <label className="reminder-toggle">
             <input

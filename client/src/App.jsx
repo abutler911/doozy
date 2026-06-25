@@ -1,11 +1,31 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+
 import { api, auth } from "./lib/api.js";
+import { useToast } from "./components/Toast.jsx";
 import Login from "./components/Login.jsx";
 import TaskComposer from "./components/TaskComposer.jsx";
 import TaskItem from "./components/TaskItem.jsx";
+import SortableTaskItem from "./components/SortableTaskItem.jsx";
 import SettingsPanel from "./components/SettingsPanel.jsx";
+import TaskEditor from "./components/TaskEditor.jsx";
+import InstallButton from "./components/InstallButton.jsx";
 
 const PRIORITY_CYCLE = { 1: 2, 2: 3, 3: 4, 4: 1 };
+const SORT_KEY = "doozy_sort_mode";
 
 function greeting() {
   const h = new Date().getHours();
@@ -14,12 +34,32 @@ function greeting() {
   return "Good evening";
 }
 
+function byPriority(a, b) {
+  return b.priority - a.priority || a.order - b.order;
+}
+function byOrder(a, b) {
+  return a.order - b.order;
+}
+
 export default function App() {
+  const toast = useToast();
   const [authed, setAuthed] = useState(!!auth.token);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [sortMode, setSortMode] = useState(
+    () => localStorage.getItem(SORT_KEY) || "priority"
+  );
+
+  // Pending-delete timers, keyed by task id, so Undo can cancel them.
+  const deleteTimers = useRef({});
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   async function load() {
     setLoading(true);
@@ -30,6 +70,7 @@ export default function App() {
       setNeedsLogin(false);
     } catch (err) {
       if (err.message === "Unauthorized") setNeedsLogin(true);
+      else toast.error("Couldn't load your tasks. Check the server is running.");
     } finally {
       setLoading(false);
     }
@@ -40,15 +81,22 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function setSort(mode) {
+    setSortMode(mode);
+    localStorage.setItem(SORT_KEY, mode);
+  }
+
+  const sorter = sortMode === "manual" ? byOrder : byPriority;
+
   const { dailyTasks, openTasks, doneTasks } = useMemo(() => {
-    const daily = tasks.filter((t) => t.type === "daily");
+    const daily = tasks.filter((t) => t.type === "daily").slice().sort(byPriority);
     const oneoffs = tasks.filter((t) => t.type === "oneoff");
     return {
       dailyTasks: daily,
-      openTasks: oneoffs.filter((t) => !t.completed),
-      doneTasks: oneoffs.filter((t) => t.completed),
+      openTasks: oneoffs.filter((t) => !t.completed).slice().sort(sorter),
+      doneTasks: oneoffs.filter((t) => t.completed).slice().sort(byPriority),
     };
-  }, [tasks]);
+  }, [tasks, sorter]);
 
   const dailyProgress = useMemo(() => {
     if (!dailyTasks.length) return null;
@@ -57,33 +105,104 @@ export default function App() {
   }, [dailyTasks]);
 
   async function createTask(task) {
-    const created = await api.createTask(task);
-    setTasks((t) => [created, ...t]);
+    try {
+      const created = await api.createTask(task);
+      setTasks((t) => [created, ...t]);
+    } catch (err) {
+      toast.error("Couldn't add that task.");
+    }
   }
 
   async function toggle(task) {
-    const updated = await api.toggleTask(task._id);
-    setTasks((t) => t.map((x) => (x._id === task._id ? updated : x)));
+    try {
+      const updated = await api.toggleTask(task._id);
+      setTasks((t) => t.map((x) => (x._id === task._id ? updated : x)));
+    } catch (err) {
+      toast.error("Couldn't update that task.");
+    }
   }
 
-  async function remove(task) {
-    await api.deleteTask(task._id);
+  function remove(task) {
+    // Optimistically remove, then actually delete after the undo window.
     setTasks((t) => t.filter((x) => x._id !== task._id));
+    deleteTimers.current[task._id] = setTimeout(async () => {
+      delete deleteTimers.current[task._id];
+      try {
+        await api.deleteTask(task._id);
+      } catch (err) {
+        toast.error("Couldn't delete that task.");
+        setTasks((t) => [task, ...t]); // restore on failure
+      }
+    }, 5000);
+
+    toast.show({
+      message: `Deleted “${task.title}”`,
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          clearTimeout(deleteTimers.current[task._id]);
+          delete deleteTimers.current[task._id];
+          setTasks((t) => [task, ...t]);
+        },
+      },
+    });
   }
 
   async function cyclePriority(task) {
     const priority = PRIORITY_CYCLE[task.priority] || 2;
-    const updated = await api.updateTask(task._id, { priority });
+    try {
+      const updated = await api.updateTask(task._id, { priority });
+      setTasks((t) => t.map((x) => (x._id === task._id ? updated : x)));
+    } catch (err) {
+      toast.error("Couldn't change priority.");
+    }
+  }
+
+  async function saveEdit(updates) {
+    const id = editing._id;
+    try {
+      const updated = await api.updateTask(id, updates);
+      setTasks((t) => t.map((x) => (x._id === id ? updated : x)));
+      setEditing(null);
+      toast.success("Saved.");
+    } catch (err) {
+      toast.error("Couldn't save changes.");
+    }
+  }
+
+  async function onDragEnd(event) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const ids = openTasks.map((t) => t._id);
+    const from = ids.indexOf(active.id);
+    const to = ids.indexOf(over.id);
+    const newIds = arrayMove(ids, from, to);
+
+    // Reflect new order locally (order = index within the open list).
     setTasks((t) =>
-      t
-        .map((x) => (x._id === task._id ? updated : x))
-        .sort((a, b) => b.priority - a.priority || a.order - b.order)
+      t.map((x) => {
+        const i = newIds.indexOf(x._id);
+        return i >= 0 ? { ...x, order: i } : x;
+      })
     );
+    try {
+      await api.reorderTasks(newIds);
+    } catch (err) {
+      toast.error("Couldn't save the new order.");
+    }
   }
 
   if (needsLogin && !authed) {
     return <Login onSuccess={load} />;
   }
+
+  const itemHandlers = {
+    onToggle: toggle,
+    onDelete: remove,
+    onCyclePriority: cyclePriority,
+    onEdit: setEditing,
+  };
 
   return (
     <div className="app">
@@ -92,20 +211,24 @@ export default function App() {
           <span className="brand-mark" aria-hidden>✦</span>
           <span className="brand-name">doozy</span>
         </div>
-        <button
-          className="icon-btn settings-btn"
-          onClick={() => setShowSettings(true)}
-          aria-label="Settings"
-        >
-          ⚙
-        </button>
+        <div className="topbar-actions">
+          <InstallButton />
+          <button
+            className="icon-btn settings-btn"
+            onClick={() => setShowSettings(true)}
+            aria-label="Settings"
+          >
+            ⚙
+          </button>
+        </div>
       </header>
 
       <main className="container">
         <div className="hero">
           <h1>{greeting()}, Andrew.</h1>
           <p className="hero-sub">
-            {openTasks.length === 0 && (!dailyProgress || dailyProgress.done === dailyProgress.total)
+            {openTasks.length === 0 &&
+            (!dailyProgress || dailyProgress.done === dailyProgress.total)
               ? "You're all caught up. Nice. ✨"
               : `${openTasks.length} task${openTasks.length === 1 ? "" : "s"} to tackle today.`}
           </p>
@@ -129,13 +252,7 @@ export default function App() {
                 </div>
                 <ul className="task-list">
                   {dailyTasks.map((t) => (
-                    <TaskItem
-                      key={t._id}
-                      task={t}
-                      onToggle={toggle}
-                      onDelete={remove}
-                      onCyclePriority={cyclePriority}
-                    />
+                    <TaskItem key={t._id} task={t} {...itemHandlers} />
                   ))}
                 </ul>
               </section>
@@ -144,19 +261,47 @@ export default function App() {
             <section className="section">
               <div className="section-head">
                 <h2>Today</h2>
+                {openTasks.length > 1 && (
+                  <div className="seg seg-sm">
+                    <button
+                      className={sortMode === "priority" ? "seg-on" : ""}
+                      onClick={() => setSort("priority")}
+                    >
+                      Priority
+                    </button>
+                    <button
+                      className={sortMode === "manual" ? "seg-on" : ""}
+                      onClick={() => setSort("manual")}
+                    >
+                      Manual
+                    </button>
+                  </div>
+                )}
               </div>
+
               {openTasks.length === 0 ? (
                 <div className="empty">Nothing here yet — add a task above.</div>
+              ) : sortMode === "manual" ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={onDragEnd}
+                >
+                  <SortableContext
+                    items={openTasks.map((t) => t._id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <ul className="task-list">
+                      {openTasks.map((t) => (
+                        <SortableTaskItem key={t._id} task={t} {...itemHandlers} />
+                      ))}
+                    </ul>
+                  </SortableContext>
+                </DndContext>
               ) : (
                 <ul className="task-list">
                   {openTasks.map((t) => (
-                    <TaskItem
-                      key={t._id}
-                      task={t}
-                      onToggle={toggle}
-                      onDelete={remove}
-                      onCyclePriority={cyclePriority}
-                    />
+                    <TaskItem key={t._id} task={t} {...itemHandlers} />
                   ))}
                 </ul>
               )}
@@ -170,13 +315,7 @@ export default function App() {
                 </div>
                 <ul className="task-list">
                   {doneTasks.map((t) => (
-                    <TaskItem
-                      key={t._id}
-                      task={t}
-                      onToggle={toggle}
-                      onDelete={remove}
-                      onCyclePriority={cyclePriority}
-                    />
+                    <TaskItem key={t._id} task={t} {...itemHandlers} />
                   ))}
                 </ul>
               </section>
@@ -186,6 +325,9 @@ export default function App() {
       </main>
 
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+      {editing && (
+        <TaskEditor task={editing} onSave={saveEdit} onClose={() => setEditing(null)} />
+      )}
     </div>
   );
 }

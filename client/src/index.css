@@ -90,6 +90,28 @@ select {
   color: transparent;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.install-btn {
+  border: 1px solid var(--accent);
+  background: rgba(124, 92, 255, 0.12);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.install-btn:hover {
+  background: rgba(124, 92, 255, 0.22);
+}
+
 .container {
   max-width: 720px;
   margin: 0 auto;
@@ -176,6 +198,15 @@ select {
 .seg .seg-on {
   background: var(--grad);
   color: #0e0b1e;
+}
+
+.seg-sm {
+  margin-left: auto;
+}
+
+.seg-sm button {
+  padding: 5px 11px;
+  font-size: 12px;
 }
 
 .pill-select,
@@ -348,6 +379,33 @@ select {
 .task-body {
   flex: 1;
   min-width: 0;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 2px 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.drag-handle {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: grab;
+  font-size: 16px;
+  padding: 0 2px;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.task-dragging {
+  opacity: 0.9;
+  box-shadow: var(--shadow);
+  border-color: var(--accent);
 }
 
 .task-title {
@@ -373,6 +431,21 @@ select {
 .badge-daily {
   color: var(--accent-2);
   background: rgba(52, 227, 212, 0.12);
+}
+
+.badge-streak {
+  color: #ffb454;
+  background: rgba(255, 159, 67, 0.12);
+}
+
+.badge-due {
+  color: var(--p-low);
+  background: rgba(74, 137, 255, 0.12);
+}
+
+.badge-overdue {
+  color: var(--p-urgent);
+  background: rgba(255, 92, 124, 0.14);
 }
 
 .prio-dot {
@@ -515,7 +588,10 @@ select {
 }
 
 .field input[type="tel"],
-.field input[type="time"] {
+.field input[type="time"],
+.field input[type="date"],
+.field input[type="text"],
+.field textarea {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -523,6 +599,22 @@ select {
   color: var(--text);
   font-size: 15px;
   outline: none;
+  width: 100%;
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--accent);
+}
+
+.field-row {
+  display: flex;
+  gap: 14px;
+}
+
+.field-row .field {
+  flex: 1;
 }
 
 .field small {
@@ -540,6 +632,21 @@ select {
 .sms-status {
   font-size: 13px;
   margin-bottom: 14px;
+}
+
+.push-field {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.btn-sm {
+  align-self: flex-start;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.warn-text {
+  color: var(--p-high);
 }
 
 .sms-status .ok {
@@ -560,4 +667,69 @@ select {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* ---------- Toasts ---------- */
+.toast-stack {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+  width: calc(100% - 40px);
+  max-width: 440px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  box-shadow: var(--shadow);
+  animation: toast-in 0.18s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.toast-msg {
+  flex: 1;
+  font-size: 14px;
+}
+
+.toast-error {
+  border-color: var(--p-urgent);
+}
+
+.toast-success {
+  border-color: var(--accent-2);
+}
+
+.toast-action {
+  border: none;
+  background: var(--grad);
+  color: #0e0b1e;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.toast-close {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 13px;
 }
