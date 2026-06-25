@@ -1,0 +1,14 @@
+# Netlify config for the Doozy frontend.
+# Set "Base directory" to client/ in Netlify, or deploy from repo root with
+# these settings. Add VITE_API_URL in Netlify → Site settings → Environment.
+
+[build]
+  base = "client"
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback so client-side routing / refreshes work.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
