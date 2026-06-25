@@ -19,6 +19,9 @@ slips. Built with React + Express + MongoDB, with SMS via [Textbelt](https://tex
 - **Single-password gate** — keeps your public subdomain private without a full
   accounts system.
 - **Cool & calm UI** — dark theme, violet→teal gradient, Sora + Inter typography.
+- **Installable PWA** — add to your Android/iOS home screen; works offline (app
+  shell cached, API is network-first). An in-app **Install** button appears when
+  your browser supports it.
 
 ## Project layout
 

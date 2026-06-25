@@ -4,6 +4,7 @@ import Login from "./components/Login.jsx";
 import TaskComposer from "./components/TaskComposer.jsx";
 import TaskItem from "./components/TaskItem.jsx";
 import SettingsPanel from "./components/SettingsPanel.jsx";
+import InstallButton from "./components/InstallButton.jsx";
 
 const PRIORITY_CYCLE = { 1: 2, 2: 3, 3: 4, 4: 1 };
 
@@ -92,13 +93,16 @@ export default function App() {
           <span className="brand-mark" aria-hidden>✦</span>
           <span className="brand-name">doozy</span>
         </div>
-        <button
-          className="icon-btn settings-btn"
-          onClick={() => setShowSettings(true)}
-          aria-label="Settings"
-        >
-          ⚙
-        </button>
+        <div className="topbar-actions">
+          <InstallButton />
+          <button
+            className="icon-btn settings-btn"
+            onClick={() => setShowSettings(true)}
+            aria-label="Settings"
+          >
+            ⚙
+          </button>
+        </div>
       </header>
 
       <main className="container">

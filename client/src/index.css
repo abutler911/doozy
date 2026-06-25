@@ -90,6 +90,28 @@ select {
   color: transparent;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.install-btn {
+  border: 1px solid var(--accent);
+  background: rgba(124, 92, 255, 0.12);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.install-btn:hover {
+  background: rgba(124, 92, 255, 0.22);
+}
+
 .container {
   max-width: 720px;
   margin: 0 auto;
