@@ -27,6 +27,7 @@ import Footer from "./components/Footer.jsx";
 
 const PRIORITY_CYCLE = { 1: 2, 2: 3, 3: 4, 4: 1 };
 const SORT_KEY = "doozy_sort_mode";
+const DAILY_KEY = "doozy_daily_open";
 
 function greeting() {
   const h = new Date().getHours();
@@ -61,6 +62,9 @@ export default function App() {
   const [sortMode, setSortMode] = useState(
     () => localStorage.getItem(SORT_KEY) || "priority"
   );
+  const [dailyOpen, setDailyOpen] = useState(
+    () => localStorage.getItem(DAILY_KEY) !== "false"
+  );
 
   // Pending-delete timers, keyed by task id, so Undo can cancel them.
   const deleteTimers = useRef({});
@@ -93,6 +97,13 @@ export default function App() {
   function setSort(mode) {
     setSortMode(mode);
     localStorage.setItem(SORT_KEY, mode);
+  }
+
+  function toggleDaily() {
+    setDailyOpen((open) => {
+      localStorage.setItem(DAILY_KEY, String(!open));
+      return !open;
+    });
   }
 
   const sorter = sortMode === "manual" ? byOrder : byPriority;
@@ -252,19 +263,28 @@ export default function App() {
           <>
             {dailyTasks.length > 0 && (
               <section className="section">
-                <div className="section-head">
+                <button
+                  className="section-head section-toggle"
+                  onClick={toggleDaily}
+                  aria-expanded={dailyOpen}
+                >
+                  <span className={`chevron ${dailyOpen ? "chevron-open" : ""}`} aria-hidden>
+                    ›
+                  </span>
                   <h2>Daily rituals</h2>
                   {dailyProgress && (
                     <span className="progress-pill">
                       {dailyProgress.done}/{dailyProgress.total}
                     </span>
                   )}
-                </div>
-                <ul className="task-list">
-                  {dailyTasks.map((t) => (
-                    <TaskItem key={t._id} task={t} {...itemHandlers} />
-                  ))}
-                </ul>
+                </button>
+                {dailyOpen && (
+                  <ul className="task-list">
+                    {dailyTasks.map((t) => (
+                      <TaskItem key={t._id} task={t} {...itemHandlers} />
+                    ))}
+                  </ul>
+                )}
               </section>
             )}
 
