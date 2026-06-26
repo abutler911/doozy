@@ -1,0 +1,14 @@
+# Netlify config for the Doozy frontend (lives at repo root so Netlify
+# auto-detects it). The React app is in client/; paths below are relative
+# to that base. Set VITE_API_URL in Netlify → Site settings → Environment.
+
+[build]
+  base = "client"
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback so client-side routing / refreshes work.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
