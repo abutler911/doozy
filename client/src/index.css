@@ -330,6 +330,27 @@ input[type="checkbox"] {
   margin-bottom: 12px;
 }
 
+.section-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.chevron {
+  color: var(--text-dim);
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.18s ease;
+  transform: rotate(0deg);
+}
+
+.chevron-open {
+  transform: rotate(90deg);
+}
+
 .section-head h2 {
   font-family: var(--font-body);
   font-weight: 600;
