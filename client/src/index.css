@@ -10,6 +10,11 @@
   --ink: #1a1a18;
   --ink-hover: #000000;
 
+  /* Single accent — a calm violet. No gradients. */
+  --accent: #6d56e6;
+  --accent-hover: #5d46d6;
+  --accent-soft: rgba(109, 86, 230, 0.1);
+
   --p-urgent: #d23f57;
   --p-high: #bd6a16;
   --p-medium: #4759c4;
@@ -76,9 +81,16 @@ textarea {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  color: #fff;
   font-size: 14px;
+}
+
+/* Themed checkboxes / native controls. */
+input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
 }
 
 .brand-name {
@@ -190,6 +202,7 @@ textarea {
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
   transition: color 0.15s;
 }
 
@@ -252,14 +265,14 @@ textarea {
 }
 
 .btn-primary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 .btn-primary:hover {
-  background: var(--ink-hover);
-  border-color: var(--ink-hover);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .btn-sm {
@@ -315,8 +328,8 @@ textarea {
 .progress-pill {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-dim);
-  background: var(--surface-2);
+  color: var(--accent);
+  background: var(--accent-soft);
   padding: 2px 9px;
   border-radius: 999px;
 }
@@ -386,8 +399,8 @@ textarea {
 }
 
 .check-on {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .task-body {
@@ -445,8 +458,8 @@ textarea {
 }
 
 .badge-daily {
-  color: var(--text);
-  background: var(--surface-2);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .badge-streak {
@@ -546,7 +559,8 @@ textarea {
 }
 
 .login-card input:focus {
-  border-color: var(--ink);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .login-error {
@@ -614,16 +628,17 @@ textarea {
   border-radius: var(--radius-sm);
   padding: 11px 13px;
   color: var(--text);
-  font-size: 15px;
+  font-size: 16px; /* 16px+ prevents iOS zoom-on-focus */
   outline: none;
   width: 100%;
   resize: vertical;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .field input:focus,
 .field textarea:focus {
-  border-color: var(--ink);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .field small {
@@ -724,7 +739,7 @@ textarea {
 }
 
 .toast-success {
-  background: var(--ink);
+  background: var(--accent);
 }
 
 .toast-action {
@@ -748,4 +763,56 @@ textarea {
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   font-size: 13px;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 540px) {
+  .topbar {
+    padding: 16px 16px;
+  }
+
+  .container {
+    padding: 6px 16px 96px;
+  }
+
+  .hero {
+    margin: 16px 0 22px;
+  }
+
+  /* Stack Type / Priority in the editor so labels never truncate. */
+  .field-row {
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* Give the title room; keep controls compact. */
+  .task {
+    gap: 9px;
+    padding: 11px 12px;
+  }
+
+  .task-title {
+    font-size: 15px;
+  }
+
+  .prio-dot {
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+
+  .delete {
+    width: 28px;
+  }
+
+  .composer-options {
+    gap: 7px;
+  }
+
+  .modal {
+    padding: 20px;
+  }
+
+  .toast-stack {
+    bottom: 16px;
+  }
 }
