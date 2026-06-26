@@ -13,23 +13,74 @@ function shift(dateStr, n) {
   return todayStr(dt);
 }
 
+export const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
+export const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Weekday (0=Sun..6=Sat) of a "YYYY-MM-DD" string. */
+function weekdayOf(dateStr) {
+  return new Date(`${dateStr}T00:00:00`).getDay();
+}
+
+/** Is this ritual scheduled on the given date? Empty repeatDays = every day. */
+function scheduledOn(dateStr, repeatDays) {
+  if (!repeatDays || repeatDays.length === 0) return true;
+  return repeatDays.includes(weekdayOf(dateStr));
+}
+
 /**
- * Current streak for a daily task: count back from today (or yesterday, if
- * today isn't done yet) over consecutive completed dates.
+ * Current streak for a daily/recurring task. Counts back over scheduled days
+ * only: a missed scheduled day breaks the streak; non-scheduled days are
+ * skipped. If today is scheduled but not yet done, today doesn't break it.
  */
-export function currentStreak(completedDates = []) {
+export function currentStreak(completedDates = [], repeatDays = []) {
   if (!completedDates.length) return 0;
   const set = new Set(completedDates);
   const today = todayStr();
-  let cursor = set.has(today) ? today : shift(today, -1);
-  // If neither today nor yesterday is done, the streak is broken.
-  if (!set.has(cursor)) return 0;
+  let cursor = today;
+  // Don't penalize for today not being done yet.
+  if (scheduledOn(cursor, repeatDays) && !set.has(cursor)) cursor = shift(cursor, -1);
+
   let streak = 0;
-  while (set.has(cursor)) {
-    streak += 1;
+  // Walk back a bounded window; stop at the first missed scheduled day.
+  for (let i = 0; i < 730; i++) {
+    if (scheduledOn(cursor, repeatDays)) {
+      if (set.has(cursor)) streak += 1;
+      else break;
+    }
     cursor = shift(cursor, -1);
   }
   return streak;
+}
+
+/** Longest run of consecutive scheduled days completed. */
+export function bestStreak(completedDates = [], repeatDays = []) {
+  if (!completedDates.length) return 0;
+  const set = new Set(completedDates);
+  const sorted = [...set].sort();
+  let best = 0;
+  let cursor = sorted[0];
+  const end = todayStr();
+  let run = 0;
+  for (let i = 0; i < 3650 && cursor <= end; i++) {
+    if (scheduledOn(cursor, repeatDays)) {
+      if (set.has(cursor)) {
+        run += 1;
+        best = Math.max(best, run);
+      } else {
+        run = 0;
+      }
+    }
+    cursor = shift(cursor, 1);
+  }
+  return best;
+}
+
+/** Array of the last n calendar days as "YYYY-MM-DD", oldest first. */
+export function lastNDays(n) {
+  const today = todayStr();
+  const out = [];
+  for (let i = n - 1; i >= 0; i--) out.push(shift(today, -i));
+  return out;
 }
 
 /** Friendly due-date label + overdue flag. Accepts ISO date or null. */

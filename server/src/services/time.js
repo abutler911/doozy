@@ -16,6 +16,13 @@ export function todayStr(date = new Date()) {
   }).format(date);
 }
 
+/** Day of week (0=Sun..6=Sat) for the local calendar day. */
+export function todayWeekday(date = new Date()) {
+  // Parse the local YYYY-MM-DD at UTC midnight so getUTCDay gives that
+  // date's weekday regardless of the runtime's own offset.
+  return new Date(`${todayStr(date)}T00:00:00Z`).getUTCDay();
+}
+
 /** Returns the local wall-clock time as "HH:mm" (24h). */
 export function nowHHmm(date = new Date()) {
   return new Intl.DateTimeFormat("en-GB", {

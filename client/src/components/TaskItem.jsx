@@ -1,5 +1,10 @@
 import { priorityMeta } from "../lib/constants.js";
-import { currentStreak, dueInfo } from "../lib/dates.js";
+import { currentStreak, dueInfo, WEEKDAY_LETTERS } from "../lib/dates.js";
+
+function repeatLabel(repeatDays) {
+  if (!repeatDays || repeatDays.length === 0) return "daily";
+  return [...repeatDays].sort().map((d) => WEEKDAY_LETTERS[d]).join("·");
+}
 
 /**
  * A single task row. Drag support is optional: when `dragListeners`/`dragRef`
@@ -20,7 +25,8 @@ export default function TaskItem({
   const p = priorityMeta(task.priority);
   const done = task.doneToday;
   const due = task.type === "oneoff" ? dueInfo(task.dueDate, task.completed) : null;
-  const streak = task.type === "daily" ? currentStreak(task.completedDates) : 0;
+  const streak =
+    task.type === "daily" ? currentStreak(task.completedDates, task.repeatDays) : 0;
 
   return (
     <li
@@ -50,7 +56,9 @@ export default function TaskItem({
       <button className="task-body" onClick={() => onEdit(task)} title="Edit task">
         <span className="task-title">{task.title}</span>
         <div className="task-meta">
-          {task.type === "daily" && <span className="badge badge-daily">daily</span>}
+          {task.type === "daily" && (
+            <span className="badge badge-daily">{repeatLabel(task.repeatDays)}</span>
+          )}
           {streak > 0 && <span className="badge badge-streak">🔥 {streak}</span>}
           {due && (
             <span className={`badge ${due.overdue ? "badge-overdue" : "badge-due"}`}>

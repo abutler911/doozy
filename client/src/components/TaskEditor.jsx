@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { PRIORITIES } from "../lib/constants.js";
 import { toDateInput } from "../lib/dates.js";
+import WeekdayPicker from "./WeekdayPicker.jsx";
+import Heatmap from "./Heatmap.jsx";
 
 /**
  * Modal editor for an existing task. Calls onSave(updates) with only the
@@ -13,6 +15,7 @@ export default function TaskEditor({ task, onSave, onClose }) {
     type: task.type,
     priority: task.priority,
     dueDate: toDateInput(task.dueDate),
+    repeatDays: task.repeatDays || [],
     reminderEnabled: task.reminderEnabled,
     reminderTime: task.reminderTime || "09:00",
   });
@@ -33,6 +36,7 @@ export default function TaskEditor({ task, onSave, onClose }) {
         type: form.type,
         priority: form.priority,
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+        repeatDays: form.type === "daily" ? form.repeatDays : [],
         reminderEnabled: form.reminderEnabled,
         reminderTime: form.reminderEnabled ? form.reminderTime : null,
       });
@@ -115,6 +119,26 @@ export default function TaskEditor({ task, onSave, onClose }) {
               type="date"
               value={form.dueDate}
               onChange={(e) => set("dueDate", e.target.value)}
+            />
+          </div>
+        )}
+
+        {form.type === "daily" && (
+          <div className="field">
+            <label>Repeats on</label>
+            <WeekdayPicker
+              value={form.repeatDays}
+              onChange={(v) => set("repeatDays", v)}
+            />
+          </div>
+        )}
+
+        {task.type === "daily" && (
+          <div className="field">
+            <label>Consistency</label>
+            <Heatmap
+              completedDates={task.completedDates || []}
+              repeatDays={task.repeatDays || []}
             />
           </div>
         )}

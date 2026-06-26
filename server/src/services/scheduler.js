@@ -3,7 +3,7 @@ import { Task } from "../models/Task.js";
 import { Settings } from "../models/Settings.js";
 import { sendSms } from "./textbelt.js";
 import { sendPushToAll } from "./webpush.js";
-import { todayStr, nowHHmm } from "./time.js";
+import { todayStr, nowHHmm, todayWeekday } from "./time.js";
 
 const PRIORITY_LABEL = { 1: "Low", 2: "Med", 3: "High", 4: "URGENT" };
 
@@ -28,7 +28,16 @@ async function runTaskReminders(today, hhmm) {
     lastReminderSent: { $ne: today },
   });
 
+  const weekday = todayWeekday();
   for (const task of due) {
+    // Skip recurring rituals that aren't scheduled for today's weekday.
+    if (
+      task.type === "daily" &&
+      task.repeatDays?.length &&
+      !task.repeatDays.includes(weekday)
+    ) {
+      continue;
+    }
     if (isDoneToday(task, today)) {
       // Already done — skip but mark so we don't re-check all minute.
       task.lastReminderSent = today;
