@@ -2,17 +2,29 @@ import { Router } from "express";
 import { Task } from "../models/Task.js";
 import { Settings } from "../models/Settings.js";
 import { sendSms } from "../services/textbelt.js";
-import { todayStr } from "../services/time.js";
+import { todayStr, todayWeekday } from "../services/time.js";
 
 const router = Router();
 
-/** Shape a task for the client, adding a `doneToday` convenience flag. */
+/** Shape a task for the client, adding `doneToday` + `scheduledToday` flags. */
 function present(task) {
   const today = todayStr();
   const obj = task.toObject ? task.toObject() : task;
   const doneToday =
     obj.type === "daily" ? obj.completedDates.includes(today) : obj.completed;
-  return { ...obj, doneToday };
+  // A daily ritual is "scheduled today" if it repeats every day (empty
+  // repeatDays) or today's weekday is in its repeatDays.
+  const scheduledToday =
+    obj.type !== "daily" ||
+    !obj.repeatDays?.length ||
+    obj.repeatDays.includes(todayWeekday());
+  return { ...obj, doneToday, scheduledToday };
+}
+
+/** Keep only valid, unique weekday numbers (0..6). */
+function sanitizeRepeatDays(days) {
+  if (!Array.isArray(days)) return [];
+  return [...new Set(days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))];
 }
 
 // GET /api/tasks — all tasks, sorted by priority then manual order.
@@ -23,8 +35,16 @@ router.get("/", async (_req, res) => {
 
 // POST /api/tasks — create.
 router.post("/", async (req, res) => {
-  const { title, notes, type, priority, dueDate, reminderTime, reminderEnabled } =
-    req.body;
+  const {
+    title,
+    notes,
+    type,
+    priority,
+    dueDate,
+    reminderTime,
+    reminderEnabled,
+    repeatDays,
+  } = req.body;
   if (!title || !title.trim()) {
     return res.status(400).json({ error: "Title is required" });
   }
@@ -40,6 +60,7 @@ router.post("/", async (req, res) => {
     dueDate: dueDate || null,
     reminderTime: reminderTime || null,
     reminderEnabled: !!reminderEnabled,
+    repeatDays: sanitizeRepeatDays(repeatDays),
     order,
   });
   res.status(201).json(present(task));
@@ -57,11 +78,13 @@ router.patch("/:id", async (req, res) => {
     "completed",
     "reminderTime",
     "reminderEnabled",
+    "repeatDays",
   ];
   const updates = {};
   for (const key of allowed) {
     if (key in req.body) updates[key] = req.body[key];
   }
+  if ("repeatDays" in updates) updates.repeatDays = sanitizeRepeatDays(updates.repeatDays);
   const task = await Task.findByIdAndUpdate(req.params.id, updates, { new: true });
   if (!task) return res.status(404).json({ error: "Not found" });
   res.json(present(task));
@@ -94,6 +117,12 @@ router.put("/reorder", async (req, res) => {
     ids.map((id, i) => Task.findByIdAndUpdate(id, { order: i }))
   );
   res.json({ ok: true });
+});
+
+// DELETE /api/tasks/completed — remove all finished one-off tasks.
+router.delete("/completed", async (_req, res) => {
+  const result = await Task.deleteMany({ type: "oneoff", completed: true });
+  res.json({ ok: true, deleted: result.deletedCount });
 });
 
 // DELETE /api/tasks/:id

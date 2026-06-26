@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { PRIORITIES } from "../lib/constants.js";
+import WeekdayPicker from "./WeekdayPicker.jsx";
 
 const empty = {
   title: "",
   type: "oneoff",
   priority: 2,
   dueDate: "",
+  repeatDays: [],
   reminderEnabled: false,
   reminderTime: "09:00",
 };
@@ -83,6 +85,13 @@ export default function TaskComposer({ onCreate }) {
               value={form.dueDate}
               onChange={(e) => set("dueDate", e.target.value)}
               aria-label="Due date"
+            />
+          )}
+
+          {form.type === "daily" && (
+            <WeekdayPicker
+              value={form.repeatDays}
+              onChange={(v) => set("repeatDays", v)}
             />
           )}
 

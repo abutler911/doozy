@@ -45,6 +45,7 @@ export const api = {
   toggleTask: (id) => request("POST", `/tasks/${id}/toggle`),
   reorderTasks: (ids) => request("PUT", "/tasks/reorder", { ids }),
   deleteTask: (id) => request("DELETE", `/tasks/${id}`),
+  clearCompleted: () => request("DELETE", "/tasks/completed"),
   remindNow: (id) => request("POST", `/tasks/${id}/remind-now`),
 
   getSettings: () => request("GET", "/settings"),

@@ -36,6 +36,10 @@ const taskSchema = new Schema(
     // Daily tasks only — list of "YYYY-MM-DD" the habit was completed.
     completedDates: { type: [String], default: [] },
 
+    // Daily tasks only — weekdays (0=Sun..6=Sat) the ritual recurs on.
+    // Empty array means every day.
+    repeatDays: { type: [Number], default: [] },
+
     // --- SMS reminder config ---
     // "HH:mm" (24h) in the server timezone. null = no reminder.
     reminderTime: { type: String, default: null },

@@ -24,6 +24,7 @@ import SettingsPanel from "./components/SettingsPanel.jsx";
 import TaskEditor from "./components/TaskEditor.jsx";
 import InstallButton from "./components/InstallButton.jsx";
 import Footer from "./components/Footer.jsx";
+import ThemeToggle from "./components/ThemeToggle.jsx";
 
 const PRIORITY_CYCLE = { 1: 2, 2: 3, 3: 4, 4: 1 };
 const SORT_KEY = "doozy_sort_mode";
@@ -65,6 +66,8 @@ export default function App() {
   const [dailyOpen, setDailyOpen] = useState(
     () => localStorage.getItem(DAILY_KEY) !== "false"
   );
+  const [showSearch, setShowSearch] = useState(false);
+  const [query, setQuery] = useState("");
 
   // Pending-delete timers, keyed by task id, so Undo can cancel them.
   const deleteTimers = useRef({});
@@ -106,17 +109,42 @@ export default function App() {
     });
   }
 
+  function toggleSearch() {
+    setShowSearch((s) => {
+      if (s) setQuery("");
+      return !s;
+    });
+  }
+
+  async function clearCompleted() {
+    const removed = doneTasks;
+    setTasks((t) => t.filter((x) => !(x.type === "oneoff" && x.completed)));
+    try {
+      await api.clearCompleted();
+      toast.success(`Cleared ${removed.length} completed task${removed.length === 1 ? "" : "s"}.`);
+    } catch (err) {
+      toast.error("Couldn't clear completed tasks.");
+      setTasks((t) => [...removed, ...t]); // restore on failure
+    }
+  }
+
   const sorter = sortMode === "manual" ? byOrder : byPriority;
 
   const { dailyTasks, openTasks, doneTasks } = useMemo(() => {
-    const daily = tasks.filter((t) => t.type === "daily").slice().sort(byPriority);
-    const oneoffs = tasks.filter((t) => t.type === "oneoff");
+    const q = query.trim().toLowerCase();
+    const matches = (t) => !q || t.title.toLowerCase().includes(q);
+    // Daily rituals: only those scheduled for today, matching the search.
+    const daily = tasks
+      .filter((t) => t.type === "daily" && t.scheduledToday !== false && matches(t))
+      .slice()
+      .sort(byPriority);
+    const oneoffs = tasks.filter((t) => t.type === "oneoff" && matches(t));
     return {
       dailyTasks: daily,
       openTasks: oneoffs.filter((t) => !t.completed).slice().sort(sorter),
       doneTasks: oneoffs.filter((t) => t.completed).slice().sort(byPriority),
     };
-  }, [tasks, sorter]);
+  }, [tasks, sorter, query]);
 
   const dailyProgress = useMemo(() => {
     if (!dailyTasks.length) return null;
@@ -234,6 +262,14 @@ export default function App() {
         <div className="topbar-actions">
           <InstallButton />
           <button
+            className={`icon-btn ${showSearch ? "icon-btn-on" : ""}`}
+            onClick={toggleSearch}
+            aria-label="Search"
+          >
+            ⌕
+          </button>
+          <ThemeToggle />
+          <button
             className="icon-btn settings-btn"
             onClick={() => setShowSettings(true)}
             aria-label="Settings"
@@ -254,6 +290,17 @@ export default function App() {
               : `${openTasks.length} task${openTasks.length === 1 ? "" : "s"} to tackle today.`}
           </p>
         </div>
+
+        {showSearch && (
+          <input
+            className="search-input"
+            type="search"
+            placeholder="Search tasks…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoFocus
+          />
+        )}
 
         <TaskComposer onCreate={createTask} />
 
@@ -342,6 +389,9 @@ export default function App() {
                 <div className="section-head">
                   <h2>Done</h2>
                   <span className="progress-pill">{doneTasks.length}</span>
+                  <button className="text-btn" onClick={clearCompleted}>
+                    Clear
+                  </button>
                 </div>
                 <ul className="task-list">
                   {doneTasks.map((t) => (
