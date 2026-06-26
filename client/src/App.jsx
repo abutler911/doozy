@@ -23,6 +23,7 @@ import SortableTaskItem from "./components/SortableTaskItem.jsx";
 import SettingsPanel from "./components/SettingsPanel.jsx";
 import TaskEditor from "./components/TaskEditor.jsx";
 import InstallButton from "./components/InstallButton.jsx";
+import Footer from "./components/Footer.jsx";
 
 const PRIORITY_CYCLE = { 1: 2, 2: 3, 3: 4, 4: 1 };
 const SORT_KEY = "doozy_sort_mode";
@@ -32,6 +33,14 @@ function greeting() {
   if (h < 12) return "Good morning";
   if (h < 18) return "Good afternoon";
   return "Good evening";
+}
+
+function todayLabel() {
+  return new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 function byPriority(a, b) {
@@ -225,6 +234,7 @@ export default function App() {
 
       <main className="container">
         <div className="hero">
+          <p className="hero-date">{todayLabel()}</p>
           <h1>{greeting()}, Andrew.</h1>
           <p className="hero-sub">
             {openTasks.length === 0 &&
@@ -322,6 +332,8 @@ export default function App() {
             )}
           </>
         )}
+
+        <Footer />
       </main>
 
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
