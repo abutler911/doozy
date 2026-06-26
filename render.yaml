@@ -1,6 +1,7 @@
 # Render Blueprint for the Doozy API (Express + node-cron).
 # Create the service from this file, then add the secret env vars
-# (MONGODB_URI, APP_PASSWORD, TEXTBELT_KEY, REMINDER_PHONE) in the dashboard.
+# (MONGODB_URI, APP_PASSWORD, TEXTBELT_KEY, REMINDER_PHONE, VAPID_*) in the
+# dashboard.
 services:
   - type: web
     name: doozy-api
@@ -24,4 +25,10 @@ services:
       - key: TEXTBELT_KEY
         sync: false
       - key: REMINDER_PHONE
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
         sync: false
