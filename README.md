@@ -10,6 +10,12 @@ slips. Built with React + Express + MongoDB, with SMS via [Textbelt](https://tex
 
 ## Features
 
+- **Smart quick-add** — just type naturally and Doozy parses it. `pay rent fri 9am
+  !urgent` becomes a task due Friday, with a 9am reminder, at Urgent priority. A live
+  preview shows exactly what it detected before you hit Add. Understands dates (`today`,
+  `tomorrow`, `next tue`, `apr 15`, `in 3 days`), times (`9am`, `at 14:30`), priorities
+  (`!urgent`/`!high`/`!low`, `p1`–`p4`, `!!!`), and recurrence (`daily`, `weekdays`,
+  `every mon wed fri`).
 - **Prioritization** — every task has a priority (Low → Urgent); the list sorts by it,
   and you can re-prioritize with a single click.
 - **Daily rituals** — recurring habits that reappear every day and reset automatically

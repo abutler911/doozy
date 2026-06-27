@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PRIORITIES } from "../lib/constants.js";
+import { parseQuickAdd } from "../lib/parse.js";
 import WeekdayPicker from "./WeekdayPicker.jsx";
 
 const empty = {
@@ -16,17 +17,37 @@ export default function TaskComposer({ onCreate }) {
   const [form, setForm] = useState(empty);
   const [open, setOpen] = useState(false);
 
+  // Live natural-language parse of whatever's typed so far.
+  const parsed = useMemo(() => parseQuickAdd(form.title), [form.title]);
+  const showPreview = form.title.trim() && parsed.tokens.length > 0;
+
   function set(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
   async function submit(e) {
     e.preventDefault();
-    if (!form.title.trim()) return;
+    // Natural-language tokens win over the manual controls for anything they
+    // detect; the controls fill in whatever wasn't typed.
+    const f = parsed.fields;
+    const title = (parsed.title || form.title).trim();
+    if (!title) return;
+
+    const type = f.type || form.type;
+    const priority = f.priority || form.priority;
+    const repeatDays = type === "daily" ? f.repeatDays ?? form.repeatDays : [];
+    const dueRaw = type === "daily" ? "" : f.dueDate || form.dueDate;
+    const reminderEnabled = f.reminderEnabled || form.reminderEnabled;
+    const reminderTime = reminderEnabled ? f.reminderTime || form.reminderTime : null;
+
     await onCreate({
-      ...form,
-      dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
-      reminderTime: form.reminderEnabled ? form.reminderTime : null,
+      title,
+      type,
+      priority,
+      repeatDays,
+      dueDate: dueRaw ? new Date(dueRaw).toISOString() : null,
+      reminderEnabled,
+      reminderTime,
     });
     setForm(empty);
     setOpen(false);
@@ -37,7 +58,7 @@ export default function TaskComposer({ onCreate }) {
       <div className="composer-row">
         <input
           className="composer-input"
-          placeholder="What needs doing?"
+          placeholder="What needs doing?  try “pay rent fri 9am !urgent”"
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
           onFocus={() => setOpen(true)}
@@ -46,6 +67,19 @@ export default function TaskComposer({ onCreate }) {
           Add
         </button>
       </div>
+
+      {showPreview && (
+        <div className="parse-preview" aria-live="polite">
+          <span className="parse-title">{parsed.title || "…"}</span>
+          <span className="parse-chips">
+            {parsed.tokens.map((t, i) => (
+              <span key={i} className={`parse-chip parse-${t.type}`}>
+                {t.label}
+              </span>
+            ))}
+          </span>
+        </div>
+      )}
 
       {open && (
         <div className="composer-options">
