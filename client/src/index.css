@@ -232,6 +232,63 @@ input[type="checkbox"] {
   border-top: 1px solid var(--border);
 }
 
+/* ---------- Smart quick-add preview ---------- */
+.parse-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
+.parse-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-right: 2px;
+}
+
+.parse-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.parse-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.parse-chip.parse-priority {
+  color: var(--p-high);
+  border-color: color-mix(in srgb, var(--p-high) 35%, var(--border));
+  background: color-mix(in srgb, var(--p-high) 12%, transparent);
+}
+
+.parse-chip.parse-date,
+.parse-chip.parse-time {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: var(--accent-soft);
+}
+
+.parse-chip.parse-daily {
+  color: var(--p-medium);
+  border-color: color-mix(in srgb, var(--p-medium) 35%, var(--border));
+  background: color-mix(in srgb, var(--p-medium) 12%, transparent);
+}
+
 .seg {
   display: inline-flex;
   background: var(--surface-2);
