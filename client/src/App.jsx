@@ -15,6 +15,7 @@ import {
 } from "@dnd-kit/sortable";
 
 import { api, auth } from "./lib/api.js";
+import { dueInfo } from "./lib/dates.js";
 import { useToast } from "./components/Toast.jsx";
 import Login from "./components/Login.jsx";
 import TaskComposer from "./components/TaskComposer.jsx";
@@ -165,6 +166,11 @@ export default function App() {
     try {
       const updated = await api.toggleTask(task._id);
       setTasks((t) => t.map((x) => (x._id === task._id ? updated : x)));
+      // A recurring to-do rolls forward instead of finishing — let the user know.
+      if (task.type === "oneoff" && task.recurrence && !updated.completed) {
+        const info = dueInfo(updated.dueDate, false);
+        toast.success(info ? `Done — next due ${info.label}.` : "Done — rolled forward.");
+      }
     } catch (err) {
       toast.error("Couldn't update that task.");
     }

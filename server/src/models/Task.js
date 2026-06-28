@@ -33,6 +33,11 @@ const taskSchema = new Schema(
     completed: { type: Boolean, default: false },
     dueDate: { type: Date, default: null },
 
+    // One-off tasks only — repeat cadence anchored on dueDate. null = no
+    // repeat. Completing a recurring to-do rolls dueDate forward to the next
+    // occurrence instead of finishing it.
+    recurrence: { type: String, enum: ["weekly", "monthly", "yearly", null], default: null },
+
     // Daily tasks only — list of "YYYY-MM-DD" the habit was completed.
     completedDates: { type: [String], default: [] },
 

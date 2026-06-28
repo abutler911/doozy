@@ -27,6 +27,32 @@ function sanitizeRepeatDays(days) {
   return [...new Set(days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))];
 }
 
+const RECURRENCES = ["weekly", "monthly", "yearly"];
+
+/** Validate a recurrence cadence, returning null for anything unrecognized. */
+function sanitizeRecurrence(value) {
+  return RECURRENCES.includes(value) ? value : null;
+}
+
+/**
+ * Next due date for a recurring to-do. Steps the cadence forward from the
+ * current due date, skipping any occurrences already in the past so an overdue
+ * task lands on its next future slot.
+ */
+function nextDue(fromDate, freq) {
+  const bump = (d) => {
+    if (freq === "weekly") d.setDate(d.getDate() + 7);
+    else if (freq === "monthly") d.setMonth(d.getMonth() + 1);
+    else if (freq === "yearly") d.setFullYear(d.getFullYear() + 1);
+    return d;
+  };
+  const todayMidnight = new Date(`${todayStr()}T00:00:00`);
+  let next = bump(new Date(fromDate));
+  let guard = 0;
+  while (next < todayMidnight && guard++ < 1200) next = bump(next);
+  return next;
+}
+
 // GET /api/tasks — all tasks, sorted by priority then manual order.
 router.get("/", async (_req, res) => {
   const tasks = await Task.find().sort({ priority: -1, order: 1, createdAt: 1 });
@@ -44,6 +70,7 @@ router.post("/", async (req, res) => {
     reminderTime,
     reminderEnabled,
     repeatDays,
+    recurrence,
   } = req.body;
   if (!title || !title.trim()) {
     return res.status(400).json({ error: "Title is required" });
@@ -52,15 +79,22 @@ router.post("/", async (req, res) => {
   const min = await Task.findOne().sort({ order: 1 }).select("order");
   const order = (min?.order ?? 0) - 1;
 
+  const finalType = type === "daily" ? "daily" : "oneoff";
+  // Recurrence only applies to one-off tasks, and needs a due date to anchor
+  // the cadence — default to today if none was given.
+  const recur = finalType === "oneoff" ? sanitizeRecurrence(recurrence) : null;
+  const due = dueDate || (recur ? new Date().toISOString() : null);
+
   const task = await Task.create({
     title: title.trim(),
     notes: notes || "",
-    type: type === "daily" ? "daily" : "oneoff",
+    type: finalType,
     priority: [1, 2, 3, 4].includes(priority) ? priority : 2,
-    dueDate: dueDate || null,
+    dueDate: due,
     reminderTime: reminderTime || null,
     reminderEnabled: !!reminderEnabled,
     repeatDays: sanitizeRepeatDays(repeatDays),
+    recurrence: recur,
     order,
   });
   res.status(201).json(present(task));
@@ -79,12 +113,16 @@ router.patch("/:id", async (req, res) => {
     "reminderTime",
     "reminderEnabled",
     "repeatDays",
+    "recurrence",
   ];
   const updates = {};
   for (const key of allowed) {
     if (key in req.body) updates[key] = req.body[key];
   }
   if ("repeatDays" in updates) updates.repeatDays = sanitizeRepeatDays(updates.repeatDays);
+  if ("recurrence" in updates) updates.recurrence = sanitizeRecurrence(updates.recurrence);
+  // Daily rituals can't carry a one-off recurrence cadence.
+  if (updates.type === "daily") updates.recurrence = null;
   const task = await Task.findByIdAndUpdate(req.params.id, updates, { new: true });
   if (!task) return res.status(404).json({ error: "Not found" });
   res.json(present(task));
@@ -100,6 +138,13 @@ router.post("/:id/toggle", async (req, res) => {
     const idx = task.completedDates.indexOf(today);
     if (idx >= 0) task.completedDates.splice(idx, 1);
     else task.completedDates.push(today);
+  } else if (!task.completed && task.recurrence) {
+    // Completing a recurring to-do rolls it forward to its next occurrence
+    // instead of finishing it. Log the completion date for future insights.
+    const today = todayStr();
+    if (!task.completedDates.includes(today)) task.completedDates.push(today);
+    task.dueDate = nextDue(task.dueDate || new Date(), task.recurrence);
+    task.completed = false;
   } else {
     task.completed = !task.completed;
   }

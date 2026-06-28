@@ -194,6 +194,25 @@ export function parseQuickAdd(raw) {
     }
   }
 
+  // --- One-off repeat cadence: weekly / monthly / yearly (anchored on the
+  // due date). Distinct from daily rituals above. ---
+  if (!recurrenceMatched) {
+    const cadence = [
+      ["weekly", /\s(weekly|every\s+week)\b/i],
+      ["monthly", /\s(monthly|every\s+month)\b/i],
+      ["yearly", /\s(yearly|annually|every\s+year)\b/i],
+    ];
+    for (const [freq, re] of cadence) {
+      const m = text.match(re);
+      if (m) {
+        fields.recurrence = freq;
+        tokens.push({ type: "repeat", label: freq[0].toUpperCase() + freq.slice(1) });
+        text = text.replace(m[0], " ");
+        break;
+      }
+    }
+  }
+
   // --- Due date (skip if it's a recurring daily task) ---
   if (!recurrenceMatched) {
     let due = null;
