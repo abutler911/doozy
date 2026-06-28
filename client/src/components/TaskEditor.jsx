@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PRIORITIES } from "../lib/constants.js";
+import { PRIORITIES, RECURRENCES } from "../lib/constants.js";
 import { toDateInput } from "../lib/dates.js";
 import WeekdayPicker from "./WeekdayPicker.jsx";
 import Heatmap from "./Heatmap.jsx";
@@ -15,6 +15,7 @@ export default function TaskEditor({ task, onSave, onClose }) {
     type: task.type,
     priority: task.priority,
     dueDate: toDateInput(task.dueDate),
+    recurrence: task.recurrence || "",
     repeatDays: task.repeatDays || [],
     reminderEnabled: task.reminderEnabled,
     reminderTime: task.reminderTime || "09:00",
@@ -36,6 +37,7 @@ export default function TaskEditor({ task, onSave, onClose }) {
         type: form.type,
         priority: form.priority,
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+        recurrence: form.type === "oneoff" ? form.recurrence : "",
         repeatDays: form.type === "daily" ? form.repeatDays : [],
         reminderEnabled: form.reminderEnabled,
         reminderTime: form.reminderEnabled ? form.reminderTime : null,
@@ -113,13 +115,29 @@ export default function TaskEditor({ task, onSave, onClose }) {
         </div>
 
         {form.type === "oneoff" && (
-          <div className="field">
-            <label>Due date</label>
-            <input
-              type="date"
-              value={form.dueDate}
-              onChange={(e) => set("dueDate", e.target.value)}
-            />
+          <div className="field-row">
+            <div className="field">
+              <label>Due date</label>
+              <input
+                type="date"
+                value={form.dueDate}
+                onChange={(e) => set("dueDate", e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label>Repeat</label>
+              <select
+                className="pill-select"
+                value={form.recurrence}
+                onChange={(e) => set("recurrence", e.target.value)}
+              >
+                {RECURRENCES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.value ? `↻ ${r.label}` : r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
 

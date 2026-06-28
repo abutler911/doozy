@@ -283,7 +283,8 @@ input[type="checkbox"] {
   background: var(--accent-soft);
 }
 
-.parse-chip.parse-daily {
+.parse-chip.parse-daily,
+.parse-chip.parse-repeat {
   color: var(--p-medium);
   border-color: color-mix(in srgb, var(--p-medium) 35%, var(--border));
   background: color-mix(in srgb, var(--p-medium) 12%, transparent);
@@ -719,6 +720,11 @@ input[type="checkbox"] {
 .badge-overdue {
   color: var(--p-urgent);
   background: rgba(210, 63, 87, 0.09);
+}
+
+.badge-repeat {
+  color: var(--p-medium);
+  background: color-mix(in srgb, var(--p-medium) 10%, transparent);
 }
 
 .prio-dot {

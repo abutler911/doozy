@@ -8,3 +8,14 @@ export const PRIORITIES = [
 export function priorityMeta(value) {
   return PRIORITIES.find((p) => p.value === value) || PRIORITIES[2];
 }
+
+export const RECURRENCES = [
+  { value: "", label: "Doesn't repeat" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "yearly", label: "Yearly" },
+];
+
+export function recurrenceLabel(value) {
+  return RECURRENCES.find((r) => r.value === value)?.label || "";
+}

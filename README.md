@@ -14,10 +14,14 @@ slips. Built with React + Express + MongoDB, with SMS via [Textbelt](https://tex
   !urgent` becomes a task due Friday, with a 9am reminder, at Urgent priority. A live
   preview shows exactly what it detected before you hit Add. Understands dates (`today`,
   `tomorrow`, `next tue`, `apr 15`, `in 3 days`), times (`9am`, `at 14:30`), priorities
-  (`!urgent`/`!high`/`!low`, `p1`–`p4`, `!!!`), and recurrence (`daily`, `weekdays`,
-  `every mon wed fri`).
+  (`!urgent`/`!high`/`!low`, `p1`–`p4`, `!!!`), recurrence (`daily`, `weekdays`,
+  `every mon wed fri`), and repeating to-dos (`weekly`, `monthly`, `yearly`).
 - **Prioritization** — every task has a priority (Low → Urgent); the list sorts by it,
   and you can re-prioritize with a single click.
+- **Recurring to-dos** — give any one-off task a weekly, monthly, or yearly cadence
+  (rent on the 1st, trash every week, a yearly renewal). Checking it off doesn't file it
+  away — it rolls forward to the next due date automatically, so it's always waiting when
+  it's next due.
 - **Daily rituals** — recurring habits that reappear every day and reset automatically
   at midnight (tracked per-date, so your streak data stays intact).
 - **SMS reminders** — per-task reminders at a chosen time, plus an optional morning

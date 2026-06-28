@@ -1,4 +1,4 @@
-import { priorityMeta } from "../lib/constants.js";
+import { priorityMeta, recurrenceLabel } from "../lib/constants.js";
 import { currentStreak, dueInfo, WEEKDAY_LETTERS } from "../lib/dates.js";
 
 function repeatLabel(repeatDays) {
@@ -65,6 +65,9 @@ export default function TaskItem({
               {due.overdue ? "⚠ " : "📅 "}
               {due.label}
             </span>
+          )}
+          {task.type === "oneoff" && task.recurrence && (
+            <span className="badge badge-repeat">↻ {recurrenceLabel(task.recurrence)}</span>
           )}
           {task.reminderEnabled && task.reminderTime && (
             <span className="badge badge-bell">🔔 {task.reminderTime}</span>

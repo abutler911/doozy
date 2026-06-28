@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { PRIORITIES } from "../lib/constants.js";
+import { PRIORITIES, RECURRENCES } from "../lib/constants.js";
 import { parseQuickAdd } from "../lib/parse.js";
 import WeekdayPicker from "./WeekdayPicker.jsx";
 
@@ -9,6 +9,7 @@ const empty = {
   priority: 2,
   dueDate: "",
   repeatDays: [],
+  recurrence: "",
   reminderEnabled: false,
   reminderTime: "09:00",
 };
@@ -36,6 +37,7 @@ export default function TaskComposer({ onCreate }) {
     const type = f.type || form.type;
     const priority = f.priority || form.priority;
     const repeatDays = type === "daily" ? f.repeatDays ?? form.repeatDays : [];
+    const recurrence = type === "daily" ? "" : f.recurrence || form.recurrence;
     const dueRaw = type === "daily" ? "" : f.dueDate || form.dueDate;
     const reminderEnabled = f.reminderEnabled || form.reminderEnabled;
     const reminderTime = reminderEnabled ? f.reminderTime || form.reminderTime : null;
@@ -45,6 +47,7 @@ export default function TaskComposer({ onCreate }) {
       type,
       priority,
       repeatDays,
+      recurrence,
       dueDate: dueRaw ? new Date(dueRaw).toISOString() : null,
       reminderEnabled,
       reminderTime,
@@ -120,6 +123,21 @@ export default function TaskComposer({ onCreate }) {
               onChange={(e) => set("dueDate", e.target.value)}
               aria-label="Due date"
             />
+          )}
+
+          {form.type === "oneoff" && (
+            <select
+              className="pill-select"
+              value={form.recurrence}
+              onChange={(e) => set("recurrence", e.target.value)}
+              aria-label="Repeat"
+            >
+              {RECURRENCES.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.value ? `↻ ${r.label}` : r.label}
+                </option>
+              ))}
+            </select>
           )}
 
           {form.type === "daily" && (
