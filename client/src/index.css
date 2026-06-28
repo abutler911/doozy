@@ -10,10 +10,12 @@
   --ink: #1a1a18;
   --ink-hover: #000000;
 
-  /* Single accent — a calm violet. No gradients. */
+  /* Violet primary + teal secondary, blended into a signature gradient. */
   --accent: #6d56e6;
   --accent-hover: #5d46d6;
   --accent-soft: rgba(109, 86, 230, 0.1);
+  --accent-2: #10b3a3;
+  --accent-2-soft: rgba(16, 179, 163, 0.1);
 
   --p-urgent: #d23f57;
   --p-high: #bd6a16;
@@ -24,6 +26,11 @@
   --radius-sm: 10px;
   --shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.05);
   --shadow: 0 6px 24px rgba(24, 24, 27, 0.08);
+
+  /* Signature gradient + accent glow + ambient backdrop strength. */
+  --grad: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  --glow: 0 10px 30px -10px rgba(109, 86, 230, 0.45);
+  --ambient: 0.5;
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
@@ -43,6 +50,8 @@
   --accent: #8b78f0;
   --accent-hover: #9a8af3;
   --accent-soft: rgba(139, 120, 240, 0.16);
+  --accent-2: #2dd4bf;
+  --accent-2-soft: rgba(45, 212, 191, 0.16);
 
   --p-urgent: #f06a82;
   --p-high: #e0973f;
@@ -51,6 +60,9 @@
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+
+  --glow: 0 12px 42px -12px rgba(139, 120, 240, 0.6);
+  --ambient: 0.9;
 }
 
 :root {
@@ -112,9 +124,10 @@ textarea {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: var(--accent);
+  background: var(--grad);
   color: #fff;
   font-size: 14px;
+  box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
 /* Themed checkboxes / native controls. */
@@ -129,7 +142,10 @@ input[type="checkbox"] {
   font-weight: 600;
   font-size: 20px;
   letter-spacing: -0.03em;
-  color: var(--text);
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .topbar-actions {
@@ -195,6 +211,12 @@ input[type="checkbox"] {
   padding: 10px;
   box-shadow: var(--shadow-sm);
   margin-bottom: 30px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.composer:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow);
 }
 
 .composer-row {
@@ -369,14 +391,21 @@ input[type="checkbox"] {
 }
 
 .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--grad);
+  border-color: transparent;
   color: #fff;
+  box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--accent) 75%, transparent);
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  border-color: transparent;
+  filter: brightness(1.06) saturate(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 .btn-sm {
@@ -607,12 +636,13 @@ input[type="checkbox"] {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.2s, transform 0.15s;
 }
 
 .task:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border-strong));
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
 }
 
 .task-done {
@@ -640,12 +670,27 @@ input[type="checkbox"] {
 }
 
 .check:hover {
-  border-color: var(--text-dim);
+  border-color: var(--accent);
 }
 
 .check-on {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--grad);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 10px -3px color-mix(in srgb, var(--accent) 75%, transparent);
+  animation: check-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(0.7);
+  }
+  55% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .task-body {
@@ -831,13 +876,32 @@ input[type="checkbox"] {
 }
 
 .modal {
+  position: relative;
   width: 100%;
   max-width: 420px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 24px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), var(--glow);
+  overflow: hidden;
+  animation: modal-in 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+/* Gradient hairline across the top of the modal. */
+.modal::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--grad);
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
 }
 
 .modal-head {
@@ -989,7 +1053,7 @@ input[type="checkbox"] {
 }
 
 .toast-success {
-  background: var(--accent);
+  background: var(--grad);
 }
 
 .toast-action {
@@ -1040,9 +1104,35 @@ input[type="checkbox"] {
   opacity: 0.8;
 }
 
+/* ---------- Ambient aurora backdrop ---------- */
+/* A soft, fixed pair of color washes behind everything for depth. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--ambient);
+  background:
+    radial-gradient(
+      62% 48% at 12% -4%,
+      color-mix(in srgb, var(--accent) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      52% 42% at 102% 6%,
+      color-mix(in srgb, var(--accent-2) 20%, transparent),
+      transparent 72%
+    );
+}
+
 /* ---------- Motion ---------- */
 /* Opacity-only so it never conflicts with dnd-kit's drag transform. */
 .task {
+  animation: fade 0.2s ease-out;
+}
+
+.modal-backdrop {
   animation: fade 0.2s ease-out;
 }
 
@@ -1054,8 +1144,17 @@ input[type="checkbox"] {
 
 @media (prefers-reduced-motion: reduce) {
   .task,
-  .toast {
+  .toast,
+  .modal,
+  .modal-backdrop,
+  .check-on,
+  .btn-primary {
     animation: none;
+  }
+
+  .btn-primary:hover,
+  .task:hover {
+    transform: none;
   }
 }
 
