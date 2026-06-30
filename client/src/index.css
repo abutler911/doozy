@@ -768,6 +768,21 @@ input[type="checkbox"] {
   font-size: 13px;
 }
 
+/* Checklist field in the new-task composer (full-width within the options row) */
+.composer-checklist {
+  flex-basis: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.composer-checklist-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
 /* Checklist editor (in the task modal) */
 .subtask-edit-list {
   list-style: none;
