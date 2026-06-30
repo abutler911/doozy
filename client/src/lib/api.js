@@ -43,8 +43,11 @@ export const api = {
   createTask: (task) => request("POST", "/tasks", task),
   updateTask: (id, updates) => request("PATCH", `/tasks/${id}`, updates),
   toggleTask: (id) => request("POST", `/tasks/${id}/toggle`),
+  addSubtask: (id, title) => request("POST", `/tasks/${id}/subtasks`, { title }),
   toggleSubtask: (id, subId) =>
     request("POST", `/tasks/${id}/subtasks/${subId}/toggle`),
+  deleteSubtask: (id, subId) =>
+    request("DELETE", `/tasks/${id}/subtasks/${subId}`),
   reorderTasks: (ids) => request("PUT", "/tasks/reorder", { ids }),
   deleteTask: (id) => request("DELETE", `/tasks/${id}`),
   clearCompleted: () => request("DELETE", "/tasks/completed"),

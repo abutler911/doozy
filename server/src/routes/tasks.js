@@ -135,6 +135,17 @@ router.post("/:id/toggle", async (req, res) => {
   res.json(present(task));
 });
 
+// POST /api/tasks/:id/subtasks — append a checklist item. Body: { title }.
+router.post("/:id/subtasks", async (req, res) => {
+  const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
+  if (!title) return res.status(400).json({ error: "Title is required" });
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: "Not found" });
+  task.subtasks.push({ title, completed: false });
+  await task.save();
+  res.json(present(task));
+});
+
 // POST /api/tasks/:id/subtasks/:subId/toggle — flip a checklist item.
 router.post("/:id/subtasks/:subId/toggle", async (req, res) => {
   const task = await Task.findById(req.params.id);
@@ -142,6 +153,17 @@ router.post("/:id/subtasks/:subId/toggle", async (req, res) => {
   const sub = task.subtasks.id(req.params.subId);
   if (!sub) return res.status(404).json({ error: "Subtask not found" });
   sub.completed = !sub.completed;
+  await task.save();
+  res.json(present(task));
+});
+
+// DELETE /api/tasks/:id/subtasks/:subId — remove a checklist item.
+router.delete("/:id/subtasks/:subId", async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: "Not found" });
+  const sub = task.subtasks.id(req.params.subId);
+  if (!sub) return res.status(404).json({ error: "Subtask not found" });
+  sub.deleteOne();
   await task.save();
   res.json(present(task));
 });
