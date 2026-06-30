@@ -855,6 +855,12 @@ input[type="checkbox"] {
 .modal {
   width: 100%;
   max-width: 420px;
+  /* Never taller than the viewport (minus the backdrop's padding); scroll
+     internally when the content — e.g. a long checklist — overflows, so the
+     title and the Save button stay reachable on short/mobile screens. */
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -1127,8 +1133,13 @@ input[type="checkbox"] {
     gap: 7px;
   }
 
+  .modal-backdrop {
+    padding: 16px;
+  }
+
   .modal {
     padding: 20px;
+    max-height: calc(100dvh - 32px);
   }
 
   .toast-stack {
