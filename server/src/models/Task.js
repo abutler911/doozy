@@ -3,6 +3,19 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 /**
+ * A subtask is a single checklist item nested under a task — e.g. the
+ * individual things to grab once you're at Home Depot. Each gets its own
+ * `_id` so it can be toggled/removed independently.
+ */
+const subtaskSchema = new Schema(
+  {
+    title: { type: String, required: true, trim: true, maxlength: 200 },
+    completed: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+/**
  * A Task is either:
  *  - type "oneoff": a normal todo with a `completed` boolean.
  *  - type "daily":  a recurring habit (reading, piano, ...) that shows up
@@ -37,6 +50,9 @@ const taskSchema = new Schema(
     // repeat. Completing a recurring to-do rolls dueDate forward to the next
     // occurrence instead of finishing it.
     recurrence: { type: String, enum: ["weekly", "monthly", "yearly", null], default: null },
+
+    // Nested checklist items (works for any task type).
+    subtasks: { type: [subtaskSchema], default: [] },
 
     // Daily tasks only — list of "YYYY-MM-DD" the habit was completed.
     completedDates: { type: [String], default: [] },

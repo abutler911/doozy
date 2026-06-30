@@ -203,6 +203,33 @@ export default function App() {
     });
   }
 
+  async function addSubtask(task, title) {
+    try {
+      const updated = await api.addSubtask(task._id, title);
+      setTasks((t) => t.map((x) => (x._id === task._id ? updated : x)));
+    } catch (err) {
+      toast.error("Couldn't add that item.");
+    }
+  }
+
+  async function toggleSubtask(task, subId) {
+    try {
+      const updated = await api.toggleSubtask(task._id, subId);
+      setTasks((t) => t.map((x) => (x._id === task._id ? updated : x)));
+    } catch (err) {
+      toast.error("Couldn't update that item.");
+    }
+  }
+
+  async function deleteSubtask(task, subId) {
+    try {
+      const updated = await api.deleteSubtask(task._id, subId);
+      setTasks((t) => t.map((x) => (x._id === task._id ? updated : x)));
+    } catch (err) {
+      toast.error("Couldn't remove that item.");
+    }
+  }
+
   async function cyclePriority(task) {
     const priority = PRIORITY_CYCLE[task.priority] || 2;
     try {
@@ -253,6 +280,9 @@ export default function App() {
 
   const itemHandlers = {
     onToggle: toggle,
+    onAddSubtask: addSubtask,
+    onToggleSubtask: toggleSubtask,
+    onDeleteSubtask: deleteSubtask,
     onDelete: remove,
     onCyclePriority: cyclePriority,
     onEdit: setEditing,
