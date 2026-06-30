@@ -630,13 +630,18 @@ input[type="checkbox"] {
 /* ---------- Task item ---------- */
 .task {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   transition: border-color 0.15s, box-shadow 0.2s, transform 0.15s;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .task:hover {
@@ -772,6 +777,151 @@ input[type="checkbox"] {
   background: color-mix(in srgb, var(--p-medium) 10%, transparent);
 }
 
+.badge-checklist {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ---------- Subtasks / checklist ---------- */
+.subtask-disclosure {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.subtask-disclosure:hover {
+  border-color: var(--border-strong);
+}
+
+.subtask-disclosure-on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.subtask-count {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.check-sm {
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+}
+
+/* Expanded inline checklist panel under a task row. */
+.subtasks {
+  margin-top: 10px;
+  padding: 10px 0 2px 34px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subtask-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subtask {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subtask-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.subtask-done .subtask-title {
+  text-decoration: line-through;
+  color: var(--text-dim);
+}
+
+.subtask-delete {
+  flex-shrink: 0;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.subtask-add {
+  display: flex;
+  gap: 8px;
+}
+
+.subtask-add input {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* Checklist field in the new-task composer (full-width within the options row) */
+.composer-checklist {
+  flex-basis: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.composer-checklist-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* Checklist editor (in the task modal) */
+.subtask-edit-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subtask-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subtask-edit-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.subtask-add-row {
+  display: flex;
+  gap: 8px;
+}
+
+.subtask-add-row input {
+  flex: 1;
+  min-width: 0;
+}
+
 .prio-dot {
   flex-shrink: 0;
   cursor: pointer;
@@ -879,6 +1029,12 @@ input[type="checkbox"] {
   position: relative;
   width: 100%;
   max-width: 420px;
+  /* Never taller than the viewport (minus the backdrop's padding); scroll
+     internally when the content — e.g. a long checklist — overflows, so the
+     title and the Save button stay reachable on short/mobile screens. */
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -1180,8 +1336,11 @@ body::before {
 
   /* Give the title room; keep controls compact. */
   .task {
-    gap: 9px;
     padding: 11px 12px;
+  }
+
+  .task-row {
+    gap: 9px;
   }
 
   .task-title {
@@ -1201,8 +1360,13 @@ body::before {
     gap: 7px;
   }
 
+  .modal-backdrop {
+    padding: 16px;
+  }
+
   .modal {
     padding: 20px;
+    max-height: calc(100dvh - 32px);
   }
 
   .toast-stack {

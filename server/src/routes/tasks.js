@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { Task } from "../models/Task.js";
 import { Settings } from "../models/Settings.js";
 import { sendSms } from "../services/textbelt.js";
@@ -53,6 +54,29 @@ function nextDue(fromDate, freq) {
   return next;
 }
 
+/**
+ * Normalize an incoming subtasks array: drop blank titles, keep the `_id`
+ * when present (so existing items aren't recreated), coerce `completed`.
+ */
+function sanitizeSubtasks(subtasks) {
+  if (!Array.isArray(subtasks)) return [];
+  return subtasks
+    .map((s) => {
+      const title = typeof s?.title === "string" ? s.title.trim() : "";
+      if (!title) return null;
+      // Always give every item a stable `_id`. `findByIdAndUpdate` (used by
+      // PATCH) does NOT mint `_id`s for new subdocuments the way `.save()`
+      // does, so without this new items would persist id-less and the inline
+      // toggle (which addresses subtasks by `_id`) could never reach them.
+      const _id =
+        s._id && mongoose.isValidObjectId(s._id)
+          ? s._id
+          : new mongoose.Types.ObjectId();
+      return { _id, title, completed: !!s.completed };
+    })
+    .filter(Boolean);
+}
+
 // GET /api/tasks — all tasks, sorted by priority then manual order.
 router.get("/", async (_req, res) => {
   const tasks = await Task.find().sort({ priority: -1, order: 1, createdAt: 1 });
@@ -71,6 +95,7 @@ router.post("/", async (req, res) => {
     reminderEnabled,
     repeatDays,
     recurrence,
+    subtasks,
   } = req.body;
   if (!title || !title.trim()) {
     return res.status(400).json({ error: "Title is required" });
@@ -95,6 +120,7 @@ router.post("/", async (req, res) => {
     reminderEnabled: !!reminderEnabled,
     repeatDays: sanitizeRepeatDays(repeatDays),
     recurrence: recur,
+    subtasks: sanitizeSubtasks(subtasks),
     order,
   });
   res.status(201).json(present(task));
@@ -114,6 +140,7 @@ router.patch("/:id", async (req, res) => {
     "reminderEnabled",
     "repeatDays",
     "recurrence",
+    "subtasks",
   ];
   const updates = {};
   for (const key of allowed) {
@@ -123,6 +150,7 @@ router.patch("/:id", async (req, res) => {
   if ("recurrence" in updates) updates.recurrence = sanitizeRecurrence(updates.recurrence);
   // Daily rituals can't carry a one-off recurrence cadence.
   if (updates.type === "daily") updates.recurrence = null;
+  if ("subtasks" in updates) updates.subtasks = sanitizeSubtasks(updates.subtasks);
   const task = await Task.findByIdAndUpdate(req.params.id, updates, { new: true });
   if (!task) return res.status(404).json({ error: "Not found" });
   res.json(present(task));
@@ -148,6 +176,39 @@ router.post("/:id/toggle", async (req, res) => {
   } else {
     task.completed = !task.completed;
   }
+  await task.save();
+  res.json(present(task));
+});
+
+// POST /api/tasks/:id/subtasks — append a checklist item. Body: { title }.
+router.post("/:id/subtasks", async (req, res) => {
+  const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
+  if (!title) return res.status(400).json({ error: "Title is required" });
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: "Not found" });
+  task.subtasks.push({ title, completed: false });
+  await task.save();
+  res.json(present(task));
+});
+
+// POST /api/tasks/:id/subtasks/:subId/toggle — flip a checklist item.
+router.post("/:id/subtasks/:subId/toggle", async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: "Not found" });
+  const sub = task.subtasks.id(req.params.subId);
+  if (!sub) return res.status(404).json({ error: "Subtask not found" });
+  sub.completed = !sub.completed;
+  await task.save();
+  res.json(present(task));
+});
+
+// DELETE /api/tasks/:id/subtasks/:subId — remove a checklist item.
+router.delete("/:id/subtasks/:subId", async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: "Not found" });
+  const sub = task.subtasks.id(req.params.subId);
+  if (!sub) return res.status(404).json({ error: "Subtask not found" });
+  sub.deleteOne();
   await task.save();
   res.json(present(task));
 });
