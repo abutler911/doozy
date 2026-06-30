@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { priorityMeta } from "../lib/constants.js";
 import { currentStreak, dueInfo, WEEKDAY_LETTERS } from "../lib/dates.js";
 
@@ -8,11 +9,13 @@ function repeatLabel(repeatDays) {
 
 /**
  * A single task row. Drag support is optional: when `dragListeners`/`dragRef`
- * are provided (by a sortable wrapper) a drag handle is shown.
+ * are provided (by a sortable wrapper) a drag handle is shown. Tasks with
+ * subtasks can be expanded to reveal an inline checklist.
  */
 export default function TaskItem({
   task,
   onToggle,
+  onToggleSubtask,
   onDelete,
   onCyclePriority,
   onEdit,
@@ -28,66 +31,111 @@ export default function TaskItem({
   const streak =
     task.type === "daily" ? currentStreak(task.completedDates, task.repeatDays) : 0;
 
+  const subtasks = task.subtasks || [];
+  const hasSubtasks = subtasks.length > 0;
+  const subDone = subtasks.filter((s) => s.completed).length;
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <li
       ref={dragRef}
       style={dragStyle}
       className={`task ${done ? "task-done" : ""} ${isDragging ? "task-dragging" : ""}`}
     >
-      {dragListeners && (
+      <div className="task-row">
+        {dragListeners && (
+          <button
+            className="drag-handle"
+            aria-label="Drag to reorder"
+            {...dragAttributes}
+            {...dragListeners}
+          >
+            ⠿
+          </button>
+        )}
+
         <button
-          className="drag-handle"
-          aria-label="Drag to reorder"
-          {...dragAttributes}
-          {...dragListeners}
+          className={`check ${done ? "check-on" : ""}`}
+          onClick={() => onToggle(task)}
+          aria-label={done ? "Mark not done" : "Mark done"}
         >
-          ⠿
+          {done ? "✓" : ""}
         </button>
-      )}
 
-      <button
-        className={`check ${done ? "check-on" : ""}`}
-        onClick={() => onToggle(task)}
-        aria-label={done ? "Mark not done" : "Mark done"}
-      >
-        {done ? "✓" : ""}
-      </button>
+        <button className="task-body" onClick={() => onEdit(task)} title="Edit task">
+          <span className="task-title">{task.title}</span>
+          <div className="task-meta">
+            {task.type === "daily" && (
+              <span className="badge badge-daily">{repeatLabel(task.repeatDays)}</span>
+            )}
+            {streak > 0 && <span className="badge badge-streak">🔥 {streak}</span>}
+            {hasSubtasks && (
+              <span className="badge badge-checklist">
+                ☑ {subDone}/{subtasks.length}
+              </span>
+            )}
+            {due && (
+              <span className={`badge ${due.overdue ? "badge-overdue" : "badge-due"}`}>
+                {due.overdue ? "⚠ " : "📅 "}
+                {due.label}
+              </span>
+            )}
+            {task.reminderEnabled && task.reminderTime && (
+              <span className="badge badge-bell">🔔 {task.reminderTime}</span>
+            )}
+            {task.notes && <span className="badge">📝</span>}
+          </div>
+        </button>
 
-      <button className="task-body" onClick={() => onEdit(task)} title="Edit task">
-        <span className="task-title">{task.title}</span>
-        <div className="task-meta">
-          {task.type === "daily" && (
-            <span className="badge badge-daily">{repeatLabel(task.repeatDays)}</span>
-          )}
-          {streak > 0 && <span className="badge badge-streak">🔥 {streak}</span>}
-          {due && (
-            <span className={`badge ${due.overdue ? "badge-overdue" : "badge-due"}`}>
-              {due.overdue ? "⚠ " : "📅 "}
-              {due.label}
+        {hasSubtasks && (
+          <button
+            className="subtask-disclosure"
+            onClick={() => setExpanded((e) => !e)}
+            aria-expanded={expanded}
+            aria-label={expanded ? "Hide checklist" : "Show checklist"}
+          >
+            <span className={`chevron ${expanded ? "chevron-open" : ""}`} aria-hidden>
+              ›
             </span>
-          )}
-          {task.reminderEnabled && task.reminderTime && (
-            <span className="badge badge-bell">🔔 {task.reminderTime}</span>
-          )}
-          {task.notes && <span className="badge">📝</span>}
-        </div>
-      </button>
+          </button>
+        )}
 
-      <button
-        className={`prio-dot ${p.className}`}
-        title={`${p.label} priority — click to change`}
-        onClick={() => onCyclePriority(task)}
-      >
-        {p.short}
-      </button>
+        <button
+          className={`prio-dot ${p.className}`}
+          title={`${p.label} priority — click to change`}
+          onClick={() => onCyclePriority(task)}
+        >
+          {p.short}
+        </button>
 
-      <button
-        className="icon-btn delete"
-        onClick={() => onDelete(task)}
-        aria-label="Delete task"
-      >
-        ✕
-      </button>
+        <button
+          className="icon-btn delete"
+          onClick={() => onDelete(task)}
+          aria-label="Delete task"
+        >
+          ✕
+        </button>
+      </div>
+
+      {hasSubtasks && expanded && (
+        <ul className="subtask-list">
+          {subtasks.map((sub) => (
+            <li
+              key={sub._id}
+              className={`subtask ${sub.completed ? "subtask-done" : ""}`}
+            >
+              <button
+                className={`check check-sm ${sub.completed ? "check-on" : ""}`}
+                onClick={() => onToggleSubtask(task, sub._id)}
+                aria-label={sub.completed ? "Mark not done" : "Mark done"}
+              >
+                {sub.completed ? "✓" : ""}
+              </button>
+              <span className="subtask-title">{sub.title}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </li>
   );
 }

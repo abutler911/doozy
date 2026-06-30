@@ -27,6 +27,23 @@ function sanitizeRepeatDays(days) {
   return [...new Set(days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))];
 }
 
+/**
+ * Normalize an incoming subtasks array: drop blank titles, keep the `_id`
+ * when present (so existing items aren't recreated), coerce `completed`.
+ */
+function sanitizeSubtasks(subtasks) {
+  if (!Array.isArray(subtasks)) return [];
+  return subtasks
+    .map((s) => {
+      const title = typeof s?.title === "string" ? s.title.trim() : "";
+      if (!title) return null;
+      const item = { title, completed: !!s.completed };
+      if (s._id) item._id = s._id;
+      return item;
+    })
+    .filter(Boolean);
+}
+
 // GET /api/tasks — all tasks, sorted by priority then manual order.
 router.get("/", async (_req, res) => {
   const tasks = await Task.find().sort({ priority: -1, order: 1, createdAt: 1 });
@@ -44,6 +61,7 @@ router.post("/", async (req, res) => {
     reminderTime,
     reminderEnabled,
     repeatDays,
+    subtasks,
   } = req.body;
   if (!title || !title.trim()) {
     return res.status(400).json({ error: "Title is required" });
@@ -61,6 +79,7 @@ router.post("/", async (req, res) => {
     reminderTime: reminderTime || null,
     reminderEnabled: !!reminderEnabled,
     repeatDays: sanitizeRepeatDays(repeatDays),
+    subtasks: sanitizeSubtasks(subtasks),
     order,
   });
   res.status(201).json(present(task));
@@ -79,12 +98,14 @@ router.patch("/:id", async (req, res) => {
     "reminderTime",
     "reminderEnabled",
     "repeatDays",
+    "subtasks",
   ];
   const updates = {};
   for (const key of allowed) {
     if (key in req.body) updates[key] = req.body[key];
   }
   if ("repeatDays" in updates) updates.repeatDays = sanitizeRepeatDays(updates.repeatDays);
+  if ("subtasks" in updates) updates.subtasks = sanitizeSubtasks(updates.subtasks);
   const task = await Task.findByIdAndUpdate(req.params.id, updates, { new: true });
   if (!task) return res.status(404).json({ error: "Not found" });
   res.json(present(task));
@@ -103,6 +124,17 @@ router.post("/:id/toggle", async (req, res) => {
   } else {
     task.completed = !task.completed;
   }
+  await task.save();
+  res.json(present(task));
+});
+
+// POST /api/tasks/:id/subtasks/:subId/toggle — flip a checklist item.
+router.post("/:id/subtasks/:subId/toggle", async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: "Not found" });
+  const sub = task.subtasks.id(req.params.subId);
+  if (!sub) return res.status(404).json({ error: "Subtask not found" });
+  sub.completed = !sub.completed;
   await task.save();
   res.json(present(task));
 });

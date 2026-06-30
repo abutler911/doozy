@@ -197,6 +197,15 @@ export default function App() {
     });
   }
 
+  async function toggleSubtask(task, subId) {
+    try {
+      const updated = await api.toggleSubtask(task._id, subId);
+      setTasks((t) => t.map((x) => (x._id === task._id ? updated : x)));
+    } catch (err) {
+      toast.error("Couldn't update that item.");
+    }
+  }
+
   async function cyclePriority(task) {
     const priority = PRIORITY_CYCLE[task.priority] || 2;
     try {
@@ -247,6 +256,7 @@ export default function App() {
 
   const itemHandlers = {
     onToggle: toggle,
+    onToggleSubtask: toggleSubtask,
     onDelete: remove,
     onCyclePriority: cyclePriority,
     onEdit: setEditing,

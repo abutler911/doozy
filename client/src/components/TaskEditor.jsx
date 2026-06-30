@@ -18,11 +18,38 @@ export default function TaskEditor({ task, onSave, onClose }) {
     repeatDays: task.repeatDays || [],
     reminderEnabled: task.reminderEnabled,
     reminderTime: task.reminderTime || "09:00",
+    subtasks: (task.subtasks || []).map((s) => ({
+      _id: s._id,
+      title: s.title,
+      completed: !!s.completed,
+    })),
   });
+  const [newSubtask, setNewSubtask] = useState("");
   const [busy, setBusy] = useState(false);
 
   function set(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function addSubtask() {
+    const title = newSubtask.trim();
+    if (!title) return;
+    set("subtasks", [...form.subtasks, { title, completed: false }]);
+    setNewSubtask("");
+  }
+
+  function updateSubtask(i, patch) {
+    set(
+      "subtasks",
+      form.subtasks.map((s, idx) => (idx === i ? { ...s, ...patch } : s))
+    );
+  }
+
+  function removeSubtask(i) {
+    set(
+      "subtasks",
+      form.subtasks.filter((_, idx) => idx !== i)
+    );
   }
 
   async function save(e) {
@@ -39,6 +66,9 @@ export default function TaskEditor({ task, onSave, onClose }) {
         repeatDays: form.type === "daily" ? form.repeatDays : [],
         reminderEnabled: form.reminderEnabled,
         reminderTime: form.reminderEnabled ? form.reminderTime : null,
+        subtasks: form.subtasks
+          .map((s) => ({ ...s, title: s.title.trim() }))
+          .filter((s) => s.title),
       });
     } finally {
       setBusy(false);
@@ -73,6 +103,57 @@ export default function TaskEditor({ task, onSave, onClose }) {
             onChange={(e) => set("notes", e.target.value)}
             placeholder="Optional details…"
           />
+        </div>
+
+        <div className="field">
+          <label>Checklist</label>
+          {form.subtasks.length > 0 && (
+            <ul className="subtask-edit-list">
+              {form.subtasks.map((sub, i) => (
+                <li key={sub._id || i} className="subtask-edit-row">
+                  <button
+                    type="button"
+                    className={`check check-sm ${sub.completed ? "check-on" : ""}`}
+                    onClick={() => updateSubtask(i, { completed: !sub.completed })}
+                    aria-label={sub.completed ? "Mark not done" : "Mark done"}
+                  >
+                    {sub.completed ? "✓" : ""}
+                  </button>
+                  <input
+                    type="text"
+                    value={sub.title}
+                    onChange={(e) => updateSubtask(i, { title: e.target.value })}
+                    placeholder="List item…"
+                  />
+                  <button
+                    type="button"
+                    className="icon-btn delete"
+                    onClick={() => removeSubtask(i)}
+                    aria-label="Remove item"
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="subtask-add-row">
+            <input
+              type="text"
+              value={newSubtask}
+              onChange={(e) => setNewSubtask(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addSubtask();
+                }
+              }}
+              placeholder="Add an item…"
+            />
+            <button type="button" className="btn" onClick={addSubtask}>
+              Add
+            </button>
+          </div>
         </div>
 
         <div className="field-row">

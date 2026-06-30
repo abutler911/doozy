@@ -543,13 +543,18 @@ input[type="checkbox"] {
 /* ---------- Task item ---------- */
 .task {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .task:hover {
@@ -662,6 +667,86 @@ input[type="checkbox"] {
 .badge-overdue {
   color: var(--p-urgent);
   background: rgba(210, 63, 87, 0.09);
+}
+
+.badge-checklist {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ---------- Subtasks / checklist ---------- */
+.subtask-disclosure {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 4px;
+  display: grid;
+  place-items: center;
+}
+
+.check-sm {
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+}
+
+.subtask-list {
+  list-style: none;
+  margin: 10px 0 2px;
+  padding: 10px 0 0 34px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subtask {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subtask-title {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.subtask-done .subtask-title {
+  text-decoration: line-through;
+  color: var(--text-dim);
+}
+
+/* Checklist editor (in the task modal) */
+.subtask-edit-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subtask-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subtask-edit-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.subtask-add-row {
+  display: flex;
+  gap: 8px;
+}
+
+.subtask-add-row input {
+  flex: 1;
+  min-width: 0;
 }
 
 .prio-dot {
@@ -1018,8 +1103,11 @@ input[type="checkbox"] {
 
   /* Give the title room; keep controls compact. */
   .task {
-    gap: 9px;
     padding: 11px 12px;
+  }
+
+  .task-row {
+    gap: 9px;
   }
 
   .task-title {
