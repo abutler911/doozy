@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { Task } from "../models/Task.js";
 import { Settings } from "../models/Settings.js";
 import { sendSms } from "../services/textbelt.js";
@@ -37,9 +38,15 @@ function sanitizeSubtasks(subtasks) {
     .map((s) => {
       const title = typeof s?.title === "string" ? s.title.trim() : "";
       if (!title) return null;
-      const item = { title, completed: !!s.completed };
-      if (s._id) item._id = s._id;
-      return item;
+      // Always give every item a stable `_id`. `findByIdAndUpdate` (used by
+      // PATCH) does NOT mint `_id`s for new subdocuments the way `.save()`
+      // does, so without this new items would persist id-less and the inline
+      // toggle (which addresses subtasks by `_id`) could never reach them.
+      const _id =
+        s._id && mongoose.isValidObjectId(s._id)
+          ? s._id
+          : new mongoose.Types.ObjectId();
+      return { _id, title, completed: !!s.completed };
     })
     .filter(Boolean);
 }
