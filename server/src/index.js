@@ -7,6 +7,7 @@ import { requireAuth } from "./middleware/auth.js";
 import { startScheduler } from "./services/scheduler.js";
 import { initWebPush } from "./services/webpush.js";
 import tasksRouter from "./routes/tasks.js";
+import notesRouter from "./routes/notes.js";
 import settingsRouter from "./routes/settings.js";
 import pushRouter from "./routes/push.js";
 
@@ -40,6 +41,7 @@ app.post("/api/login", (req, res) => {
 
 // Everything below requires auth.
 app.use("/api/tasks", requireAuth, tasksRouter);
+app.use("/api/notes", requireAuth, notesRouter);
 app.use("/api/settings", requireAuth, settingsRouter);
 app.use("/api/push", requireAuth, pushRouter);
 

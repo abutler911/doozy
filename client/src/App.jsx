@@ -23,6 +23,7 @@ import TaskItem from "./components/TaskItem.jsx";
 import SortableTaskItem from "./components/SortableTaskItem.jsx";
 import SettingsPanel from "./components/SettingsPanel.jsx";
 import TaskEditor from "./components/TaskEditor.jsx";
+import NotesView from "./components/NotesView.jsx";
 import InstallButton from "./components/InstallButton.jsx";
 import Footer from "./components/Footer.jsx";
 import ThemeToggle from "./components/ThemeToggle.jsx";
@@ -30,6 +31,7 @@ import ThemeToggle from "./components/ThemeToggle.jsx";
 const PRIORITY_CYCLE = { 1: 2, 2: 3, 3: 4, 4: 1 };
 const SORT_KEY = "doozy_sort_mode";
 const DAILY_KEY = "doozy_daily_open";
+const VIEW_KEY = "doozy_view";
 
 function greeting() {
   const h = new Date().getHours();
@@ -69,6 +71,9 @@ export default function App() {
   );
   const [showSearch, setShowSearch] = useState(false);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState(
+    () => localStorage.getItem(VIEW_KEY) || "tasks"
+  );
 
   // Pending-delete timers, keyed by task id, so Undo can cancel them.
   const deleteTimers = useRef({});
@@ -115,6 +120,14 @@ export default function App() {
       if (s) setQuery("");
       return !s;
     });
+  }
+
+  function switchView(next) {
+    setView(next);
+    localStorage.setItem(VIEW_KEY, next);
+    // The search box is shared; clear it so a stale query doesn't carry over.
+    setQuery("");
+    setShowSearch(false);
   }
 
   async function clearCompleted() {
@@ -316,6 +329,38 @@ export default function App() {
       </header>
 
       <main className="container">
+        <nav className="viewnav">
+          <div className="seg seg-lg">
+            <button
+              className={view === "tasks" ? "seg-on" : ""}
+              onClick={() => switchView("tasks")}
+            >
+              Tasks
+            </button>
+            <button
+              className={view === "notes" ? "seg-on" : ""}
+              onClick={() => switchView("notes")}
+            >
+              Notes
+            </button>
+          </div>
+        </nav>
+
+        {showSearch && (
+          <input
+            className="search-input"
+            type="search"
+            placeholder={view === "notes" ? "Search notes…" : "Search tasks…"}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoFocus
+          />
+        )}
+
+        {view === "notes" ? (
+          <NotesView toast={toast} query={query} />
+        ) : (
+          <>
         <div className="hero">
           <p className="hero-date">{todayLabel()}</p>
           <h1>{greeting()}, Andrew.</h1>
@@ -326,17 +371,6 @@ export default function App() {
               : `${openTasks.length} task${openTasks.length === 1 ? "" : "s"} to tackle today.`}
           </p>
         </div>
-
-        {showSearch && (
-          <input
-            className="search-input"
-            type="search"
-            placeholder="Search tasks…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-          />
-        )}
 
         <TaskComposer onCreate={createTask} />
 
@@ -436,6 +470,8 @@ export default function App() {
                 </ul>
               </section>
             )}
+          </>
+        )}
           </>
         )}
 

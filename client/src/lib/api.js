@@ -53,6 +53,12 @@ export const api = {
   clearCompleted: () => request("DELETE", "/tasks/completed"),
   remindNow: (id) => request("POST", `/tasks/${id}/remind-now`),
 
+  listNotes: () => request("GET", "/notes"),
+  createNote: (note) => request("POST", "/notes", note),
+  updateNote: (id, updates) => request("PATCH", `/notes/${id}`, updates),
+  reorderNotes: (ids) => request("PUT", "/notes/reorder", { ids }),
+  deleteNote: (id) => request("DELETE", `/notes/${id}`),
+
   getSettings: () => request("GET", "/settings"),
   updateSettings: (s) => request("PUT", "/settings", s),
   testSms: () => request("POST", "/settings/test-sms"),
