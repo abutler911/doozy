@@ -24,6 +24,9 @@ slips. Built with React + Express + MongoDB, with SMS via [Textbelt](https://tex
   it's next due.
 - **Daily rituals** — recurring habits that reappear every day and reset automatically
   at midnight (tracked per-date, so your streak data stays intact).
+- **Notes** — a Google Keep-style board for jotting things down: color-tinted cards you
+  can pin to the top, archive out of the way, and search through. Switch between Tasks
+  and Notes from the header.
 - **SMS reminders** — per-task reminders at a chosen time, plus an optional morning
   summary of everything on your plate. Sent via Textbelt.
 - **Single-password gate** — keeps your public subdomain private without a full
