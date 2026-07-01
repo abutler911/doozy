@@ -15,7 +15,7 @@ const empty = {
   subtasks: [],
 };
 
-export default function TaskComposer({ onCreate }) {
+export default function TaskComposer({ onCreate, inputRef }) {
   const [form, setForm] = useState(empty);
   const [open, setOpen] = useState(false);
   const [newSubtask, setNewSubtask] = useState("");
@@ -80,6 +80,7 @@ export default function TaskComposer({ onCreate }) {
     <form className="composer" onSubmit={submit}>
       <div className="composer-row">
         <input
+          ref={inputRef}
           className="composer-input"
           placeholder="What needs doing?  try “pay rent fri 9am !urgent”"
           value={form.title}

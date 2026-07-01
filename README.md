@@ -23,7 +23,10 @@ slips. Built with React + Express + MongoDB, with SMS via [Textbelt](https://tex
   away — it rolls forward to the next due date automatically, so it's always waiting when
   it's next due.
 - **Daily rituals** — recurring habits that reappear every day and reset automatically
-  at midnight (tracked per-date, so your streak data stays intact).
+  at midnight (tracked per-date, so your streak data stays intact). A progress bar
+  tracks the day, and finishing every ritual earns a little confetti.
+- **Keyboard shortcuts** — `n` focuses the composer, `/` opens search, `Esc`
+  backs out of anything.
 - **Notes** — a Google Keep-style board for jotting things down: color-tinted cards you
   can pin to the top, archive out of the way, and search through. Switch between Tasks
   and Notes from the header.
