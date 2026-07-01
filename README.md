@@ -12,6 +12,12 @@ slips. Built with React + Express + MongoDB, with SMS via [Textbelt](https://tex
 
 - **Prioritization** — every task has a priority (Low → Urgent); the list sorts by it,
   and you can re-prioritize with a single click.
+- **Natural-language quick add** — type `call dentist tomorrow at 2pm !high` or
+  `gym every mon wed fri` and the composer parses the due date, reminder time,
+  priority, and recurrence live (shown as dismissible chips) so you almost never
+  need the detail form.
+- **Keyboard shortcuts** — `n` focuses the composer, `/` opens search, `Esc`
+  backs out of anything.
 - **Daily rituals** — recurring habits that reappear every day and reset automatically
   at midnight (tracked per-date, so your streak data stays intact).
 - **SMS reminders** — per-task reminders at a chosen time, plus an optional morning

@@ -7,7 +7,7 @@ export function todayStr(d = new Date()) {
 }
 
 /** Shift a "YYYY-MM-DD" string by n days. */
-function shift(dateStr, n) {
+export function shift(dateStr, n) {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(y, m - 1, d + n);
   return todayStr(dt);
