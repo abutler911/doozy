@@ -301,9 +301,11 @@ export default function App() {
     onEdit: setEditing,
   };
 
+  const wide = view === "notes";
+
   return (
     <div className="app">
-      <header className="topbar">
+      <header className={`topbar ${wide ? "topbar-wide" : ""}`}>
         <div className="brand">
           <span className="brand-mark" aria-hidden>✦</span>
           <span className="brand-name">doozy</span>
@@ -328,7 +330,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="container">
+      <main className={`container ${wide ? "container-wide" : ""}`}>
         <nav className="viewnav">
           <div className="seg seg-lg">
             <button
