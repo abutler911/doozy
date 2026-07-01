@@ -15,7 +15,9 @@ import {
 } from "@dnd-kit/sortable";
 
 import { api, auth } from "./lib/api.js";
+import { todayStr } from "./lib/dates.js";
 import { useToast } from "./components/Toast.jsx";
+import Celebration from "./components/Celebration.jsx";
 import Login from "./components/Login.jsx";
 import TaskComposer from "./components/TaskComposer.jsx";
 import TaskItem from "./components/TaskItem.jsx";
@@ -29,6 +31,7 @@ import ThemeToggle from "./components/ThemeToggle.jsx";
 const PRIORITY_CYCLE = { 1: 2, 2: 3, 3: 4, 4: 1 };
 const SORT_KEY = "doozy_sort_mode";
 const DAILY_KEY = "doozy_daily_open";
+const CELEBRATE_KEY = "doozy_celebrated";
 
 function greeting() {
   const h = new Date().getHours();
@@ -68,9 +71,14 @@ export default function App() {
   );
   const [showSearch, setShowSearch] = useState(false);
   const [query, setQuery] = useState("");
+  const [celebrating, setCelebrating] = useState(false);
 
   // Pending-delete timers, keyed by task id, so Undo can cancel them.
   const deleteTimers = useRef({});
+  const composerInputRef = useRef(null);
+  const searchInputRef = useRef(null);
+  // Previous rituals progress, to detect the moment the last one is checked.
+  const prevDaily = useRef(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -96,6 +104,41 @@ export default function App() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Global keyboard shortcuts: n = new task, / = search, Esc = close/back out.
+  useEffect(() => {
+    function onKey(e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target;
+      const typing =
+        el instanceof HTMLElement &&
+        (el.tagName === "INPUT" ||
+          el.tagName === "TEXTAREA" ||
+          el.tagName === "SELECT" ||
+          el.isContentEditable);
+
+      if (e.key === "Escape") {
+        if (editing) setEditing(null);
+        else if (showSettings) setShowSettings(false);
+        else if (showSearch) {
+          setShowSearch(false);
+          setQuery("");
+        } else if (typing) el.blur();
+        return;
+      }
+      if (typing || editing || showSettings) return;
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        composerInputRef.current?.focus();
+      } else if (e.key === "/") {
+        e.preventDefault();
+        if (showSearch) searchInputRef.current?.focus();
+        else setShowSearch(true);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editing, showSettings, showSearch]);
 
   function setSort(mode) {
     setSortMode(mode);
@@ -151,6 +194,26 @@ export default function App() {
     const done = dailyTasks.filter((t) => t.doneToday).length;
     return { done, total: dailyTasks.length };
   }, [dailyTasks]);
+
+  // Fire the confetti the moment the last ritual of the day is checked off
+  // (once per day; skipped while a search filter distorts the counts).
+  useEffect(() => {
+    const prev = prevDaily.current;
+    prevDaily.current = query ? null : dailyProgress;
+    if (!dailyProgress || loading || query || !prev) return;
+    if (
+      dailyProgress.total > 0 &&
+      dailyProgress.done === dailyProgress.total &&
+      prev.total === dailyProgress.total &&
+      prev.done < dailyProgress.total
+    ) {
+      const today = todayStr();
+      if (localStorage.getItem(CELEBRATE_KEY) !== today) {
+        localStorage.setItem(CELEBRATE_KEY, today);
+        setCelebrating(true);
+      }
+    }
+  }, [dailyProgress, loading, query]);
 
   async function createTask(task) {
     try {
@@ -323,6 +386,7 @@ export default function App() {
 
         {showSearch && (
           <input
+            ref={searchInputRef}
             className="search-input"
             type="search"
             placeholder="Search tasks…"
@@ -332,7 +396,7 @@ export default function App() {
           />
         )}
 
-        <TaskComposer onCreate={createTask} />
+        <TaskComposer onCreate={createTask} inputRef={composerInputRef} />
 
         {loading ? (
           <div className="empty">Loading…</div>
@@ -355,6 +419,25 @@ export default function App() {
                     </span>
                   )}
                 </button>
+                {dailyProgress && (
+                  <div
+                    className="ritual-progress"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={dailyProgress.total}
+                    aria-valuenow={dailyProgress.done}
+                    aria-label="Daily rituals completed"
+                  >
+                    <div
+                      className="ritual-progress-fill"
+                      style={{
+                        width: `${Math.round(
+                          (dailyProgress.done / dailyProgress.total) * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                )}
                 {dailyOpen && (
                   <ul className="task-list">
                     {dailyTasks.map((t) => (
@@ -440,6 +523,7 @@ export default function App() {
       {editing && (
         <TaskEditor task={editing} onSave={saveEdit} onClose={() => setEditing(null)} />
       )}
+      {celebrating && <Celebration onDone={() => setCelebrating(false)} />}
     </div>
   );
 }

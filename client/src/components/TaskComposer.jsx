@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PRIORITIES } from "../lib/constants.js";
+import { parseQuickAdd, stripQuickAdd } from "../lib/quickadd.js";
 import WeekdayPicker from "./WeekdayPicker.jsx";
 
 const empty = {
@@ -13,13 +14,54 @@ const empty = {
   subtasks: [],
 };
 
-export default function TaskComposer({ onCreate }) {
+const CHIP_ICON = { due: "📅", time: "🔔", priority: "⚑", repeat: "↻" };
+
+export default function TaskComposer({ onCreate, inputRef }) {
   const [form, setForm] = useState(empty);
   const [open, setOpen] = useState(false);
   const [newSubtask, setNewSubtask] = useState("");
+  // Quick-add matches the user dismissed (chip ✕) — keep their text literal.
+  const [ignored, setIgnored] = useState(() => new Set());
+  // Fields the user set by hand — manual choices beat parsed tokens.
+  const [touched, setTouched] = useState(() => new Set());
+
+  const parsed = useMemo(() => parseQuickAdd(form.title), [form.title]);
+  const active = parsed.matches.filter(
+    (m) => !ignored.has(m.key) && !touched.has(m.key)
+  );
+  const byKey = Object.fromEntries(active.map((m) => [m.key, m]));
+
+  // What will actually be created: the form, overlaid with live parse results.
+  const eff = {
+    ...form,
+    priority: byKey.priority ? byKey.priority.value : form.priority,
+    dueDate: byKey.due ? byKey.due.value : form.dueDate,
+    reminderEnabled: byKey.time ? true : form.reminderEnabled,
+    reminderTime: byKey.time ? byKey.time.value : form.reminderTime,
+    type: byKey.repeat ? "daily" : form.type,
+    repeatDays: byKey.repeat ? byKey.repeat.value : form.repeatDays,
+  };
 
   function set(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  // Manual edits win over parsed tokens from then on (until the next task).
+  function setManual(key, value, matchKey) {
+    set(key, value);
+    setTouched((t) => new Set(t).add(matchKey));
+  }
+
+  function setTitle(value) {
+    set("title", value);
+    if (!value.trim() && (ignored.size || touched.size)) {
+      setIgnored(new Set());
+      setTouched(new Set());
+    }
+  }
+
+  function dismissChip(key) {
+    setIgnored((s) => new Set(s).add(key));
   }
 
   function addSubtask() {
@@ -39,16 +81,25 @@ export default function TaskComposer({ onCreate }) {
   async function submit(e) {
     e.preventDefault();
     if (!form.title.trim()) return;
+    // Strip applied tokens from the title; if that leaves nothing, keep the raw text.
+    const title = stripQuickAdd(form.title, active) || form.title.trim();
     await onCreate({
-      ...form,
-      dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
-      reminderTime: form.reminderEnabled ? form.reminderTime : null,
+      ...eff,
+      title,
+      dueDate:
+        eff.type === "oneoff" && eff.dueDate
+          ? new Date(eff.dueDate).toISOString()
+          : null,
+      repeatDays: eff.type === "daily" ? eff.repeatDays : [],
+      reminderTime: eff.reminderEnabled ? eff.reminderTime : null,
       subtasks: form.subtasks
         .map((s) => ({ title: s.title.trim(), completed: false }))
         .filter((s) => s.title),
     });
     setForm(empty);
     setNewSubtask("");
+    setIgnored(new Set());
+    setTouched(new Set());
     setOpen(false);
   }
 
@@ -56,10 +107,11 @@ export default function TaskComposer({ onCreate }) {
     <form className="composer" onSubmit={submit}>
       <div className="composer-row">
         <input
+          ref={inputRef}
           className="composer-input"
-          placeholder="What needs doing?"
+          placeholder={'What needs doing? Try "gym tomorrow at 6pm !high"'}
           value={form.title}
-          onChange={(e) => set("title", e.target.value)}
+          onChange={(e) => setTitle(e.target.value)}
           onFocus={() => setOpen(true)}
         />
         <button className="btn btn-primary" type="submit">
@@ -67,20 +119,40 @@ export default function TaskComposer({ onCreate }) {
         </button>
       </div>
 
+      {active.length > 0 && (
+        <div className="qa-chips" aria-live="polite">
+          {active.map((m) => (
+            <span key={m.key} className="qa-chip">
+              <span aria-hidden>{CHIP_ICON[m.key]}</span>
+              {m.label}
+              <button
+                type="button"
+                className="qa-chip-x"
+                onClick={() => dismissChip(m.key)}
+                aria-label={`Keep "${m.label}" as plain text`}
+                title="Keep as plain text"
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       {open && (
         <div className="composer-options">
           <div className="seg">
             <button
               type="button"
-              className={form.type === "oneoff" ? "seg-on" : ""}
-              onClick={() => set("type", "oneoff")}
+              className={eff.type === "oneoff" ? "seg-on" : ""}
+              onClick={() => setManual("type", "oneoff", "repeat")}
             >
               One-off
             </button>
             <button
               type="button"
-              className={form.type === "daily" ? "seg-on" : ""}
-              onClick={() => set("type", "daily")}
+              className={eff.type === "daily" ? "seg-on" : ""}
+              onClick={() => setManual("type", "daily", "repeat")}
             >
               Daily
             </button>
@@ -88,8 +160,8 @@ export default function TaskComposer({ onCreate }) {
 
           <select
             className="pill-select"
-            value={form.priority}
-            onChange={(e) => set("priority", Number(e.target.value))}
+            value={eff.priority}
+            onChange={(e) => setManual("priority", Number(e.target.value), "priority")}
           >
             {PRIORITIES.map((p) => (
               <option key={p.value} value={p.value}>
@@ -98,37 +170,43 @@ export default function TaskComposer({ onCreate }) {
             ))}
           </select>
 
-          {form.type === "oneoff" && (
+          {eff.type === "oneoff" && (
             <input
               type="date"
               className="time-input"
-              value={form.dueDate}
-              onChange={(e) => set("dueDate", e.target.value)}
+              value={eff.dueDate}
+              onChange={(e) => setManual("dueDate", e.target.value, "due")}
               aria-label="Due date"
             />
           )}
 
-          {form.type === "daily" && (
+          {eff.type === "daily" && (
             <WeekdayPicker
-              value={form.repeatDays}
-              onChange={(v) => set("repeatDays", v)}
+              value={eff.repeatDays}
+              onChange={(v) => {
+                setManual("repeatDays", v, "repeat");
+                set("type", "daily");
+              }}
             />
           )}
 
           <label className="reminder-toggle">
             <input
               type="checkbox"
-              checked={form.reminderEnabled}
-              onChange={(e) => set("reminderEnabled", e.target.checked)}
+              checked={eff.reminderEnabled}
+              onChange={(e) => setManual("reminderEnabled", e.target.checked, "time")}
             />
             Remind me
           </label>
-          {form.reminderEnabled && (
+          {eff.reminderEnabled && (
             <input
               type="time"
               className="time-input"
-              value={form.reminderTime}
-              onChange={(e) => set("reminderTime", e.target.value)}
+              value={eff.reminderTime}
+              onChange={(e) => {
+                setManual("reminderTime", e.target.value, "time");
+                set("reminderEnabled", true);
+              }}
             />
           )}
 
