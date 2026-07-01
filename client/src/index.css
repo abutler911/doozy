@@ -1495,15 +1495,36 @@ body::before {
 }
 
 .note-grid {
-  columns: 240px;
-  column-gap: 12px;
+  columns: 236px;
+  column-gap: 14px;
+}
+
+/* Notes get a wide, multi-column "board" — the header, hero, composer, and
+   search stay centered and narrow; only the masonry board fills the width. */
+.container-wide {
+  max-width: 1100px;
+}
+
+.topbar-wide {
+  max-width: 1100px;
+}
+
+.container-wide .hero {
+  text-align: center;
+}
+
+.container-wide .search-input,
+.container-wide .empty {
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ---------- Note card ---------- */
 .note {
   position: relative;
   break-inside: avoid;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   background: var(--note-bg, var(--surface));
   border: 1px solid var(--note-border, var(--border));
   border-radius: var(--radius);
@@ -1764,8 +1785,21 @@ body::before {
     bottom: 16px;
   }
 
+  /* Two-up post-it grid on phones, like Keep. */
   .note-grid {
-    columns: 1;
+    columns: 2;
+    column-gap: 10px;
+  }
+
+  .note {
+    margin-bottom: 10px;
+  }
+
+  /* On very narrow screens, one column reads better. */
+  @media (max-width: 360px) {
+    .note-grid {
+      columns: 1;
+    }
   }
 
   .seg-lg button {
