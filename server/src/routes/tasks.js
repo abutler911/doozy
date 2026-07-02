@@ -180,6 +180,39 @@ router.post("/:id/toggle", async (req, res) => {
   res.json(present(task));
 });
 
+// POST /api/tasks/:id/complete — idempotent "mark done". Used by the
+// notification action buttons, where a tap on a stale notification must
+// never un-complete a task the way /toggle would.
+router.post("/:id/complete", async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: "Not found" });
+
+  const today = todayStr();
+  if (task.type === "daily") {
+    if (!task.completedDates.includes(today)) task.completedDates.push(today);
+  } else if (!task.completed && task.recurrence) {
+    // Same roll-forward behavior as /toggle for recurring to-dos.
+    if (!task.completedDates.includes(today)) task.completedDates.push(today);
+    task.dueDate = nextDue(task.dueDate || new Date(), task.recurrence);
+  } else {
+    task.completed = true;
+  }
+  task.reminderSnoozedUntil = null;
+  await task.save();
+  res.json(present(task));
+});
+
+// POST /api/tasks/:id/snooze — re-fire the reminder later. Body: { minutes }.
+router.post("/:id/snooze", async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: "Not found" });
+  const raw = Number(req.body?.minutes);
+  const minutes = Number.isFinite(raw) ? Math.min(720, Math.max(5, raw)) : 30;
+  task.reminderSnoozedUntil = new Date(Date.now() + minutes * 60 * 1000);
+  await task.save();
+  res.json({ ok: true, until: task.reminderSnoozedUntil });
+});
+
 // POST /api/tasks/:id/subtasks — append a checklist item. Body: { title }.
 router.post("/:id/subtasks", async (req, res) => {
   const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
