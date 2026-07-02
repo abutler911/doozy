@@ -32,6 +32,10 @@ slips. Built with React + Express + MongoDB, with SMS via [Textbelt](https://tex
   and Notes from the header.
 - **SMS reminders** — per-task reminders at a chosen time, plus an optional morning
   summary of everything on your plate. Sent via Textbelt.
+- **Actionable push reminders** — task reminders arrive as push notifications with
+  **Done ✓** and **Snooze 30m** buttons, so you can act without opening the app.
+- **Streak-at-risk nudges** — an optional evening warning (Settings → streak nudge)
+  listing rituals with a live 🔥 streak you haven't done yet today.
 - **Single-password gate** — keeps your public subdomain private without a full
   accounts system.
 - **Cool & calm UI** — dark theme, violet→teal gradient, Sora + Inter typography.
@@ -109,11 +113,12 @@ Vite proxies `/api` to `localhost:4000`, so no extra config is needed in dev.
 3. Note the service URL (e.g. `https://doozy-api.onrender.com`). Optionally map a
    custom subdomain `api.doozy.andrewfbutler.com`.
 
-> ⚠️ **Render free tier sleeps after ~15 min of inactivity**, and the in-process
-> reminder scheduler can't fire while the service is asleep. To get reliable SMS
-> reminders, either upgrade to a paid instance, or set up a free uptime pinger
-> (e.g. [cron-job.org](https://cron-job.org) or UptimeRobot) hitting
-> `https://<your-api>/api/health` every few minutes to keep it awake.
+> ⚠️ The blueprint pins a paid **starter** instance: the in-process reminder
+> scheduler can only fire while the service is awake, and Render's free tier
+> sleeps after ~15 min of inactivity. If you drop back to `plan: free`, set up
+> an uptime pinger (e.g. [cron-job.org](https://cron-job.org) or UptimeRobot)
+> hitting `https://<your-api>/api/health` every few minutes — but reminders,
+> streak nudges, and snoozes are only reliable on an always-on instance.
 
 ### Frontend → Netlify
 

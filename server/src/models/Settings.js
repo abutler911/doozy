@@ -20,6 +20,12 @@ const settingsSchema = new Schema(
 
     // Web push: when on, reminders & summary also fire as push notifications.
     pushEnabled: { type: Boolean, default: false },
+
+    // Streak-at-risk nudge: in the evening, warn about rituals with a live
+    // streak that haven't been done yet today.
+    streakNudgeEnabled: { type: Boolean, default: false },
+    streakNudgeTime: { type: String, default: "20:00" }, // "HH:mm"
+    lastStreakNudgeSent: { type: String, default: null }, // "YYYY-MM-DD"
   },
   { timestamps: true }
 );

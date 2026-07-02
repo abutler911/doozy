@@ -12,6 +12,8 @@ router.get("/", async (_req, res) => {
     phone: settings.phone,
     dailySummaryEnabled: settings.dailySummaryEnabled,
     dailySummaryTime: settings.dailySummaryTime,
+    streakNudgeEnabled: settings.streakNudgeEnabled,
+    streakNudgeTime: settings.streakNudgeTime,
     pushEnabled: settings.pushEnabled,
     smsConfigured: !!process.env.TEXTBELT_KEY,
     pushConfigured: isPushConfigured(),
@@ -22,11 +24,21 @@ router.get("/", async (_req, res) => {
 // PUT /api/settings
 router.put("/", async (req, res) => {
   const settings = await Settings.getGlobal();
-  const { phone, dailySummaryEnabled, dailySummaryTime, pushEnabled } = req.body;
+  const {
+    phone,
+    dailySummaryEnabled,
+    dailySummaryTime,
+    streakNudgeEnabled,
+    streakNudgeTime,
+    pushEnabled,
+  } = req.body;
   if (phone !== undefined) settings.phone = phone;
   if (dailySummaryEnabled !== undefined)
     settings.dailySummaryEnabled = !!dailySummaryEnabled;
   if (dailySummaryTime !== undefined) settings.dailySummaryTime = dailySummaryTime;
+  if (streakNudgeEnabled !== undefined)
+    settings.streakNudgeEnabled = !!streakNudgeEnabled;
+  if (streakNudgeTime !== undefined) settings.streakNudgeTime = streakNudgeTime;
   if (pushEnabled !== undefined) settings.pushEnabled = !!pushEnabled;
   await settings.save();
   res.json({ ok: true });

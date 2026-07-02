@@ -2,6 +2,8 @@
 // VITE_API_URL to the Render API origin (e.g. https://api.doozy.andrewfbutler.com).
 const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
+import { saveToken } from "./tokenStore.js";
+
 const TOKEN_KEY = "doozy_token";
 
 export const auth = {
@@ -11,11 +13,17 @@ export const auth = {
   set token(v) {
     if (v) localStorage.setItem(TOKEN_KEY, v);
     else localStorage.removeItem(TOKEN_KEY);
+    saveToken(v || "");
   },
   clear() {
     localStorage.removeItem(TOKEN_KEY);
+    saveToken("");
   },
 };
+
+// Keep the service worker's copy in sync for sessions that logged in before
+// the mirror existed.
+saveToken(auth.token);
 
 async function request(method, path, body) {
   const headers = { "Content-Type": "application/json" };

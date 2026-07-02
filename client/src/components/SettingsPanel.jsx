@@ -22,6 +22,8 @@ export default function SettingsPanel({ onClose }) {
       phone: settings.phone,
       dailySummaryEnabled: settings.dailySummaryEnabled,
       dailySummaryTime: settings.dailySummaryTime,
+      streakNudgeEnabled: settings.streakNudgeEnabled,
+      streakNudgeTime: settings.streakNudgeTime,
     });
     setStatus("Saved.");
     setTimeout(() => setStatus(""), 1500);
@@ -106,6 +108,28 @@ export default function SettingsPanel({ onClose }) {
               type="time"
               value={settings.dailySummaryTime}
               onChange={(e) => set("dailySummaryTime", e.target.value)}
+            />
+          )}
+        </div>
+
+        <div className="field">
+          <label className="row-label">
+            <input
+              type="checkbox"
+              checked={!!settings.streakNudgeEnabled}
+              onChange={(e) => set("streakNudgeEnabled", e.target.checked)}
+            />
+            Warn me when a streak is at risk
+          </label>
+          <small>
+            An evening heads-up for rituals with a live 🔥 streak you haven't
+            done yet today.
+          </small>
+          {settings.streakNudgeEnabled && (
+            <input
+              type="time"
+              value={settings.streakNudgeTime || "20:00"}
+              onChange={(e) => set("streakNudgeTime", e.target.value)}
             />
           )}
         </div>

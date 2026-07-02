@@ -68,6 +68,9 @@ const taskSchema = new Schema(
     // Tracks the last "YYYY-MM-DD" we sent a reminder, so we send at most
     // once per day per task.
     lastReminderSent: { type: String, default: null },
+    // Set by the "Snooze" notification action — the reminder fires again
+    // once this time passes (then clears), independent of lastReminderSent.
+    reminderSnoozedUntil: { type: Date, default: null },
   },
   { timestamps: true }
 );
